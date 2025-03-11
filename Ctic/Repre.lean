@@ -13,6 +13,16 @@ notation:max "Hom[" x ", " "-" "]" => HomCov x
 notation:max "Hom[" x ", " y "]" => Functor.obj Hom[x, -] y
 -- notation:max "Hom[" "-" ", " "-" "]" => HomCov
 
+theorem NatTrans.naturality_expanded_set_valued
+    [Category C] {F G : C ⥤ Type v} {α : F ⟹ G} {X Y : C} (f : X ⟶ Y) :
+    ∀ u, G.map f (α.eta X u) = α.eta Y (F.map f u) := by
+  rw [← funext_iff]
+  rw [← Function.comp_def]
+  rw [← Function.comp_def]
+  exact α.naturality f
+
+namespace Yoneda
+
 abbrev t1 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) → (F x) := fun η => η.eta x (𝟙 x)
 
 abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x, -] ⟹ F) := by
@@ -28,7 +38,7 @@ abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x,
   simp [t]
   simp [Category.comp]
 
-def yoneda_equiv [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≃ (F x) where
+def equiv [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≃ (F x) where
   toFun := t1 F x
   invFun := t2 F x
   right_inv := by
@@ -50,7 +60,7 @@ def yoneda_equiv [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -]
     simp at this
     rw [this]
 
-def yoneda_iso [Category.{v, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≅ (F x) where
+def iso [Category.{v, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≅ (F x) where
   morphism := t1 F x
   inverse := t2 F x
   forward := by
@@ -62,12 +72,9 @@ def yoneda_iso [Category.{v, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] �
     ext y f
     clear v
     simp [HomCov] at f
-    have := α.naturality (X := x) (Y := y) f
-    simp [Category.comp] at this
+    have := α.naturality_expanded_set_valued f (𝟙 x)
     simp [HomCov] at this
-    have := funext_iff.mp this (𝟙 x)
-    simp at this
-    rw [this]
+    exact this
   backward := by
     simp [Category.comp]
     funext Y
@@ -89,12 +96,7 @@ def yoneda_factor_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : C ⥤ Type v wh
     simp [HomCov]
     funext s
     simp
-    have := T.naturality (X := U) (Y := V) g
-    rw [funext_iff] at this
-    specialize this (f ≫ s)
-    simp [Category.comp] at this
-    simp [HomCov] at this
-    exact this
+    exact T.naturality_expanded_set_valued g (f ≫ s)
   map_id := by
     intro X
     simp [Category.id]
@@ -106,36 +108,34 @@ def yoneda_factor_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : C ⥤ Type v wh
     funext t
     simp
 
-def yoneda_natural_in_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : yoneda_factor_x F ≅ F where
+def natural_in_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : yoneda_factor_x F ≅ F where
   morphism := by
-    use fun x => (yoneda_iso F x).morphism
+    use fun x => (Yoneda.iso F x).morphism
     intro X Y f
     simp [Category.comp]
     funext t
     simp
-    simp [yoneda_iso, t1, yoneda_factor_x]
-    have := t.naturality f
-    rw [funext_iff] at this
+    simp [Yoneda.iso, t1, yoneda_factor_x]
+    have := t.naturality_expanded_set_valued f
     simp [HomCov, Category.comp] at this
     simp [this]
   inverse := by
-    use fun x => (yoneda_iso F x).inverse
+    use fun x => (Yoneda.iso F x).inverse
     intro X Y f
     simp [Category.comp]
     funext t
     simp
-    simp [yoneda_iso, t1, yoneda_factor_x]
+    simp [Yoneda.iso, t1, yoneda_factor_x]
     simp [Category.comp]
   forward := by
     simp [Category.id, NatTrans.id]
     simp [Category.comp, NatTrans.comp]
     congr
     funext X t
-    simp [yoneda_iso, t2, t1]
+    simp [Yoneda.iso, t2, t1]
     congr
     funext c f
-    have := t.naturality f
-    rw [funext_iff] at this
+    have := t.naturality_expanded_set_valued f
     simp [HomCov, Category.comp] at this
     simp [this]
   backward := by
@@ -144,10 +144,91 @@ def yoneda_natural_in_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : yoneda_fact
     congr
     funext X FX
     simp
-    simp [yoneda_iso, t2, t1]
+    simp [Yoneda.iso, t2, t1]
     simp [Category.id]
 
-def YonedaCov (C : Type u) [Category.{u, v + 1} C] : Cᵒᵖ ⥤ (C ⥤ Type v) where
+def factor_F [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
+  obj F := Hom[c, -] ⟹ F
+  map {G H} α := by
+    intro F
+    constructor
+    case eta =>
+      intro X h
+      let t := F.eta X h
+      exact α.eta X t
+    case naturality =>
+      intro X Y f
+      simp
+      funext h
+      simp [Category.comp]
+      have := α.naturality_expanded_set_valued f (F.eta X h)
+      rw [this]
+      have := F.naturality_expanded_set_valued f h
+      rw [this]
+
+def functor_app_factor_func [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
+  obj F := F.obj c
+  map {G H} α := by
+    intro o
+    exact α.eta _ o
+
+def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_factor_func c where
+  morphism := by
+    simp [factor_F, functor_app_factor_func]
+    constructor
+    case eta =>
+      simp
+      intro F η
+      exact η.eta _ (𝟙 c)
+    case naturality =>
+      simp
+      intro X Y f
+      funext η
+      simp [Category.comp]
+  inverse := by
+    simp [factor_F, functor_app_factor_func]
+    constructor
+    case eta =>
+      simp
+      intro F o
+      constructor
+      case eta =>
+        intro Y f
+        exact F.map f o
+      case naturality =>
+        intro X Y f
+        simp [Category.comp, HomCov]
+        funext g
+        simp [Category.comp]
+    case naturality =>
+      intro F G η
+      simp [Category.comp]
+      funext t
+      simp
+      funext u f
+      have := η.naturality_expanded_set_valued f
+      rw [this]
+  forward := by
+    simp [Category.comp, NatTrans.comp]
+    rw [NatTrans.ext_iff]
+    funext t
+    simp [Category.id]
+    funext η
+    simp
+    rw [NatTrans.ext_iff]
+    simp
+    funext Y f
+    have := η.naturality_expanded_set_valued f (𝟙 c)
+    simp [this, HomCov]
+  backward := by
+    simp [Category.comp, NatTrans.comp]
+    rw [NatTrans.ext_iff]
+    funext t
+    simp [Category.id]
+    funext η
+    simp [Category.id]
+
+def CovEmbedding (C : Type u) [Category.{u, v + 1} C] : Cᵒᵖ ⥤ (C ⥤ Type v) where
   obj X := Hom[X.unop, -]
   map {X Y} f := by
     simp [Category.Hom]
@@ -173,9 +254,9 @@ def YonedaCov (C : Type u) [Category.{u, v + 1} C] : Cᵒᵖ ⥤ (C ⥤ Type v) 
     funext _ _
     simp
 
-def Yoneda.Faithful [Category.{u, v + 1} C] : (YonedaCov C).Faithful := by
+def Faithful [Category.{u, v + 1} C] : (Yoneda.CovEmbedding C).Faithful := by
   intro X Y f g h1
-  simp [YonedaCov] at h1
+  simp [Yoneda.CovEmbedding] at h1
   rw [NatTrans.ext_iff] at h1
   simp at h1
   rw [funext_iff] at h1
@@ -187,9 +268,9 @@ def Yoneda.Faithful [Category.{u, v + 1} C] : (YonedaCov C).Faithful := by
   simp at h1
   exact h1
 
-def Yoneda.Full [Category.{u, u + 1} C] : (YonedaCov C).Full := by
+def Full [Category.{u, u + 1} C] : (Yoneda.CovEmbedding C).Full := by
   intro ⟨X⟩ ⟨Y⟩
-  simp [YonedaCov]
+  simp [Yoneda.CovEmbedding]
   intro g
   simp [Category.Hom]
   conv =>
@@ -197,17 +278,16 @@ def Yoneda.Full [Category.{u, u + 1} C] : (YonedaCov C).Full := by
     intro a
     rw [NatTrans.ext_iff]
     simp
-  let f1 := yoneda_iso (Hom[Y, -]) X
+  let f1 := Yoneda.iso (Hom[Y, -]) X
   let f2 := f1.morphism g
   use f2
   simp [f2, f1]
-  simp [yoneda_iso, t1]
+  simp [Yoneda.iso, t1]
   funext c h
-  have := g.naturality h
-  simp [Category.comp] at this
+  have := g.naturality_expanded_set_valued h (𝟙 X)
   simp [HomCov] at this
-  have := funext_iff.mp this (𝟙 X)
-  simp at this
-  rw [this]
+  exact this
 
-def Yoneda.FullyFaithful [Category.{u, u + 1} C] : (YonedaCov C).FullyFaithful := ⟨Yoneda.Full, Yoneda.Faithful⟩
+def FullyFaithful [Category.{u, u + 1} C] : (Yoneda.CovEmbedding C).FullyFaithful := ⟨Yoneda.Full, Yoneda.Faithful⟩
+
+end Yoneda
