@@ -14,7 +14,7 @@ infix:300 " ⟶ " => Category.Hom
 prefix:320 "𝟙 " => Category.id
 infixl:300 " ≫ " => Category.comp
 
-attribute [simp] Category.id_comp Category.comp_id
+attribute [simp] Category.id_comp Category.comp_id Category.assoc
 
 instance : Category (Type u) where
   Hom x y := x → y
@@ -136,11 +136,13 @@ structure Opposite (C : Type u) where
   op ::
   unop : C
 
+postfix:max "ᵒᵖ" => Opposite
+
 instance Category.opposite [inst : Category C] : Category (Opposite C) where
   Hom x y := inst.Hom y.unop x.unop
   id x := inst.id x.unop
   comp {x y z} f g := inst.comp g f
-  assoc {w x y z} f g h := by simp; rw [inst.assoc]
+  assoc {w x y z} f g h := by simp
 
 example {c : C} (f : X ≅ Y) : (c ⟶ X) ≃ (c ⟶ Y) := by
   let toFun : (c ⟶ X) → (c ⟶ Y) := fun α => α ≫ f.morphism
@@ -174,6 +176,9 @@ theorem Isomorphic.monic_and_epic {f : X ⟶ Y} : Isomorphic f → Monic f ∧ E
     simp [h2]
 
 theorem Isomorphism.monic_and_epic (f : X ≅ Y) : Monic f.morphism ∧ Epic f.morphism := f.isomorphic.monic_and_epic
+
+theorem Isomorphism.monic (f : X ≅ Y) : Monic f.morphism := f.isomorphic.monic_and_epic.left
+theorem Isomorphism.epic (f : X ≅ Y) : Epic f.morphism := f.isomorphic.monic_and_epic.right
 
 @[ext]
 structure Monomorphism (X Y : C) where
