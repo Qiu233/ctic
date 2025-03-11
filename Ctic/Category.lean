@@ -136,13 +136,48 @@ structure Opposite (C : Type u) where
   op ::
   unop : C
 
-postfix:max "ᵒᵖ" => Opposite
+class HasOpposite (α : Sort u) (β : outParam (Sort v)) where
+  op : α → β
 
-instance Category.opposite [inst : Category C] : Category (Opposite C) where
+postfix:max "ᵒᵖ" => HasOpposite.op
+
+@[reducible]
+instance : HasOpposite (Type u) (Type u) where
+  op α := Opposite α
+
+@[reducible]
+instance [Category C] : HasOpposite C Cᵒᵖ where
+  op := Opposite.op
+
+@[reducible]
+instance [Category C] : HasOpposite Cᵒᵖ C where
+  op := Opposite.unop
+
+@[reducible]
+instance [Category C] : HasOpposite C (Opposite C) where
+  op := Opposite.op
+
+@[reducible]
+instance [Category C] : HasOpposite (Opposite C) C where
+  op := Opposite.unop
+
+@[reducible]
+instance Category.opposite [inst : Category C] : Category Cᵒᵖ where
   Hom x y := inst.Hom y.unop x.unop
   id x := inst.id x.unop
   comp {x y z} f g := inst.comp g f
   assoc {w x y z} f g h := by simp
+
+@[simp]
+theorem Opposite.eta {x : C} : (xᵒᵖᵒᵖ) = x := rfl
+
+open Lean in
+@[app_unexpander Opposite.unop]
+def unexpand_Opposite_unop : PrettyPrinter.Unexpander
+  | `($(_) $x) => `($xᵒᵖ)
+  | _ => throw ()
+
+instance [Category C] : Category (Opposite C) := Category.opposite
 
 example {c : C} (f : X ≅ Y) : (c ⟶ X) ≃ (c ⟶ Y) := by
   let toFun : (c ⟶ X) → (c ⟶ Y) := fun α => α ≫ f.morphism

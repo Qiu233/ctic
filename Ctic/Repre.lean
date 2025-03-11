@@ -4,18 +4,19 @@ namespace CTIC
 
 structure Representation [Category.{u, v + 1} C] (F : C ⥤ Type v) where
   obj : C
-  iso : HomCov obj ≅ F
+  iso : HomCov objᵒᵖ ≅ F
 
 class inductive Representable [Category.{u, v + 1} C] (F : C ⥤ Type v) : Prop where
   | intro (rep : Nonempty (Representation F))
 
-notation:max "Hom[" x ", " "-" "]" => HomCov x
+notation:max "Hom[" x ", " "-" "]" => HomCov xᵒᵖ
 notation:max "Hom[" x ", " y "]" => Functor.obj Hom[x, -] y
+notation:max "Hom[" "-" ", " x "]" => HomCon x
 -- notation:max "Hom[" "-" ", " "-" "]" => HomCov
 
 theorem NatTrans.naturality_expanded_set_valued
     [Category C] {F G : C ⥤ Type v} {α : F ⟹ G} {X Y : C} (f : X ⟶ Y) :
-    ∀ u, G.map f (α.eta X u) = α.eta Y (F.map f u) := by
+    ∀ u, G.map f (α.component X u) = α.component Y (F.map f u) := by
   rw [← funext_iff]
   rw [← Function.comp_def]
   rw [← Function.comp_def]
@@ -23,7 +24,7 @@ theorem NatTrans.naturality_expanded_set_valued
 
 namespace Yoneda
 
-abbrev t1 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) → (F x) := fun η => η.eta x (𝟙 x)
+abbrev t1 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) → (F x) := fun η => η.component x (𝟙 x)
 
 abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x, -] ⟹ F) := by
   intro Fx
@@ -32,7 +33,6 @@ abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x,
   use t
   intro X Y f
   simp [t]
-  simp [HomCov]
   simp [Category.comp]
   funext u
   simp [t]
@@ -87,7 +87,7 @@ def yoneda_factor_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : C ⥤ Type v wh
     intro T
     let t : (Z : C) → Hom[Y, Z] ⟶ F.obj Z := by
       intro Z g
-      apply T.eta
+      apply T.component
       exact (f ≫ g)
     use t
     intro U V g
@@ -152,16 +152,16 @@ def factor_F [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
   map {G H} α := by
     intro F
     constructor
-    case eta =>
+    case component =>
       intro X h
-      let t := F.eta X h
-      exact α.eta X t
+      let t := F.component X h
+      exact α.component X t
     case naturality =>
       intro X Y f
       simp
       funext h
       simp [Category.comp]
-      have := α.naturality_expanded_set_valued f (F.eta X h)
+      have := α.naturality_expanded_set_valued f (F.component X h)
       rw [this]
       have := F.naturality_expanded_set_valued f h
       rw [this]
@@ -170,16 +170,16 @@ def functor_app_factor_func [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤
   obj F := F.obj c
   map {G H} α := by
     intro o
-    exact α.eta _ o
+    exact α.component _ o
 
 def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_factor_func c where
   morphism := by
     simp [factor_F, functor_app_factor_func]
     constructor
-    case eta =>
+    case component =>
       simp
       intro F η
-      exact η.eta _ (𝟙 c)
+      exact η.component _ (𝟙 c)
     case naturality =>
       simp
       intro X Y f
@@ -188,11 +188,11 @@ def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_fa
   inverse := by
     simp [factor_F, functor_app_factor_func]
     constructor
-    case eta =>
+    case component =>
       simp
       intro F o
       constructor
-      case eta =>
+      case component =>
         intro Y f
         exact F.map f o
       case naturality =>
@@ -207,6 +207,7 @@ def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_fa
       simp
       funext u f
       have := η.naturality_expanded_set_valued f
+      simp at this
       rw [this]
   forward := by
     simp [Category.comp, NatTrans.comp]

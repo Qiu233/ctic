@@ -55,6 +55,15 @@ def Functor.comp_id {C D : Type*} [Category C] [Category D] (F : C ⥤ D) : F.co
   . funext
     simp
 
+def Functor.opposite [Category C] [Category D] (F : C ⥤ D) : Cᵒᵖ ⥤ Dᵒᵖ where
+  obj X := Opposite.op (F.obj X.unop)
+  map {X Y} f := F.map f
+  map_id {X} := by simp [Category.id]
+  map_comp {X Y Z f g} := by simp [Category.comp]
+
+@[reducible]
+instance [Category C] [Category D] : HasOpposite (C ⥤ D) (Cᵒᵖ ⥤ Dᵒᵖ) where
+  op F := F.opposite
 
 instance Category.product (C : Type u) (D : Type v) [Category C] [Category D] : Category (C × D) where
   Hom X Y := (X.fst ⟶ Y.fst) × (X.snd ⟶ Y.snd)
@@ -71,17 +80,26 @@ f |       |F f     | G f
 -/
 @[ext]
 structure NatTrans {C : Type u} {D : Type v} [Category C] [Category D] (F G : C ⥤ D) where
-  eta : ∀ X : C, F.obj X ⟶ G.obj X
-  naturality : ∀ {X Y : C}, ∀ f : X ⟶ Y, eta X ≫ G.map f = F.map f ≫ eta Y
+  component : ∀ X : C, F.obj X ⟶ G.obj X
+  naturality : ∀ {X Y : C}, ∀ f : X ⟶ Y, component X ≫ G.map f = F.map f ≫ component Y
 
 infix:300 " ⟹ " => NatTrans
 
+instance [Category C] [Category D] {F G : C ⥤ D} : CoeFun (F ⟹ G) (fun _ => ∀ X : C, F.obj X ⟶ G.obj X) where
+  coe f := f.component
+
+open Lean in
+@[app_unexpander NatTrans.component]
+def unexpand_NatTrans_component : PrettyPrinter.Unexpander
+  | `($(_) $f $a) => `($f $a)
+  | _ => throw ()
+
 abbrev NatTrans.id {C : Type u} {D : Type v} [Category C] [Category D] (F : C ⥤ D) : F ⟹ F where
-  eta X := 𝟙 (F.obj X)
+  component X := 𝟙 (F.obj X)
   naturality {X Y} f := by simp
 
 abbrev NatTrans.comp [Category C] [Category D] {F G H : C ⥤ D} (α : F ⟹ G) (β : G ⟹ H) : F ⟹ H where
-  eta X := α.eta X ≫ β.eta X
+  component X := α.component X ≫ β.component X
   naturality {X Y} f := by
     simp
     rw [← Category.assoc]
@@ -159,6 +177,12 @@ private lemma Functor.const.map [Category C] [Category D] {d : D} {X Y : C} {f :
 
 instance [Category C] [Category D] : CoeFun (C ⥤ D) (fun _ => C → D) where
   coe f := f.obj
+
+open Lean in
+@[app_unexpander Functor.obj]
+def unexpand_Functor_obj : PrettyPrinter.Unexpander
+  | `($(_) $f $a) => `($f $a)
+  | _ => throw ()
 
 @[simp]
 private lemma Functor.const.map2 [Category C] [Category D] {d : D} {X Y : C} {f : X ⟶ Y} : (Functor.const d).map f = 𝟙 d := by simp [constFunctor, Functor.const]
@@ -282,7 +306,7 @@ end
 theorem HomEquiv.id [Category C] {a b : C} {f : a ⟶ b} : HomEquiv (Isomorphism.id a) (Isomorphism.id b) f = f := by simp [HomEquiv, lemma_1_5_10.i, Isomorphism.id]
 
 def Isomorphism.component [Category C] [Category D] {F G : C ⥤ D} (iso : F ≅ G) (X : C) : F.obj X ≅ G.obj X := by
-  apply Isomorphism.mk (iso.morphism.eta X) (iso.inverse.eta X)
+  apply Isomorphism.mk (iso.morphism.component X) (iso.inverse.component X)
   . have := iso.forward
     simp [Category.comp, NatTrans.comp] at this
     rw [NatTrans.ext_iff] at this
@@ -299,10 +323,10 @@ def Isomorphism.component [Category C] [Category D] {F G : C ⥤ D} (iso : F ≅
     simp [this, Category.id, NatTrans.id]
 
 @[simp]
-theorem Isomorphism.component_def [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X : C} : (iso.component X).morphism = iso.morphism.eta X := by simp [Isomorphism.component]
+theorem Isomorphism.component_def [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X : C} : (iso.component X).morphism = iso.morphism.component X := by simp [Isomorphism.component]
 
 @[simp]
-theorem Isomorphism.component_inv [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X : C} : (iso.component X).inverse = iso.inverse.eta X := by simp [Isomorphism.component]
+theorem Isomorphism.component_inv [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X : C} : (iso.component X).inverse = iso.inverse.component X := by simp [Isomorphism.component]
 
 namespace Category
 
@@ -531,7 +555,7 @@ lemma Category.fuse_middle_left {C : Type u} [Category C] {X1 X2 X3 X4 X5 : C} {
   f1 ≫ f2 ≫ f3 ≫ f4 = f1 ≫ (f2 ≫ f3) ≫ f4 := by simp [Category.assoc]
 
 @[simp]
-lemma Isomorphism.forward_iso [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} (X : C) : iso.morphism.eta X ≫ iso.inverse.eta X = 𝟙 (F.obj X) := by
+lemma Isomorphism.forward_iso [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} (X : C) : iso.morphism.component X ≫ iso.inverse.component X = 𝟙 (F.obj X) := by
   have := iso.forward
   simp [Category.comp, NatTrans.comp] at this
   rw [NatTrans.ext_iff] at this
@@ -540,7 +564,7 @@ lemma Isomorphism.forward_iso [Category C] [Category D] {F G : C ⥤ D} {iso : F
   apply this
 
 @[simp]
-lemma Isomorphism.backward_iso [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} (X : C) : iso.inverse.eta X ≫ iso.morphism.eta X = 𝟙 (G.obj X) := by
+lemma Isomorphism.backward_iso [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} (X : C) : iso.inverse.component X ≫ iso.morphism.component X = 𝟙 (G.obj X) := by
   have := iso.backward
   simp [Category.comp, NatTrans.comp] at this
   rw [NatTrans.ext_iff] at this
@@ -549,8 +573,8 @@ lemma Isomorphism.backward_iso [Category C] [Category D] {F G : C ⥤ D} {iso : 
   apply this
 
 def Isomorphism.map_iso [Category C] [Category D] {F G : C ⥤ D} (iso : F ≅ G) (X Y : C) : (F.obj X ⟶ F.obj Y) ≅ (G.obj X ⟶ G.obj Y) where
-  morphism f := iso.inverse.eta X ≫ f ≫ iso.morphism.eta Y
-  inverse f := iso.morphism.eta X ≫ f ≫ iso.inverse.eta Y
+  morphism f := iso.inverse.component X ≫ f ≫ iso.morphism.component Y
+  inverse f := iso.morphism.component X ≫ f ≫ iso.inverse.component Y
   forward := by
     funext f
     simp [Category.comp, Category.id]
@@ -561,11 +585,11 @@ def Isomorphism.map_iso [Category C] [Category D] {F G : C ⥤ D} (iso : F ≅ G
     simp [← Category.assoc]
 
 @[simp]
-theorem Isomorphism.map_iso_def [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X Y : C} {f : F.obj X ⟶ F.obj Y} : (iso.map_iso X Y).morphism f = iso.inverse.eta X ≫ f ≫ iso.morphism.eta Y := by
+theorem Isomorphism.map_iso_def [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X Y : C} {f : F.obj X ⟶ F.obj Y} : (iso.map_iso X Y).morphism f = iso.inverse.component X ≫ f ≫ iso.morphism.component Y := by
   simp [Isomorphism.map_iso]
 
 @[simp]
-theorem Isomorphism.map_iso_inv [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X Y : C} {f : G.obj X ⟶ G.obj Y} : (iso.map_iso X Y).inverse f = iso.morphism.eta X ≫ f ≫ iso.inverse.eta Y := by
+theorem Isomorphism.map_iso_inv [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X Y : C} {f : G.obj X ⟶ G.obj Y} : (iso.map_iso X Y).inverse f = iso.morphism.component X ≫ f ≫ iso.inverse.component Y := by
   simp [Isomorphism.map_iso]
 
 
@@ -666,13 +690,13 @@ private lemma Functor.id_obj [Category C] : (𝟭 C).obj X = X := by simp [Funct
 @[simp]
 private lemma Functor.id_obj' [Category C] : (𝟭 C) X = X := by simp [Functor.id]
 
-lemma Isomorphism.component_epic [Category C] [Category D] {F G : C ⥤ D} {f f' : G.obj X ⟶ A} {iso : F ≅ G} : iso.morphism.eta X ≫ f = iso.morphism.eta X ≫ f' → f = f' := fun h1 => (iso.component X).epic f f' h1
+lemma Isomorphism.component_epic [Category C] [Category D] {F G : C ⥤ D} {f f' : G.obj X ⟶ A} {iso : F ≅ G} : iso.morphism.component X ≫ f = iso.morphism.component X ≫ f' → f = f' := fun h1 => (iso.component X).epic f f' h1
 
-lemma Isomorphism.component_monic [Category C] [Category D] {F G : C ⥤ D} {f f' : A ⟶ F.obj X} {iso : F ≅ G} : f ≫ iso.morphism.eta X = f' ≫ iso.morphism.eta X → f = f' := fun h1 => (iso.component X).monic f f' h1
+lemma Isomorphism.component_monic [Category C] [Category D] {F G : C ⥤ D} {f f' : A ⟶ F.obj X} {iso : F ≅ G} : f ≫ iso.morphism.component X = f' ≫ iso.morphism.component X → f = f' := fun h1 => (iso.component X).monic f f' h1
 
-lemma Isomorphism.component_inv_epic [Category C] [Category D] {F G : C ⥤ D} {f f' : F.obj X ⟶ A} {iso : F ≅ G} : iso.inverse.eta X ≫ f = iso.inverse.eta X ≫ f' → f = f' := fun h1 => (iso.component X).symm.epic f f' h1
+lemma Isomorphism.component_inv_epic [Category C] [Category D] {F G : C ⥤ D} {f f' : F.obj X ⟶ A} {iso : F ≅ G} : iso.inverse.component X ≫ f = iso.inverse.component X ≫ f' → f = f' := fun h1 => (iso.component X).symm.epic f f' h1
 
-lemma Isomorphism.component_inv_monic [Category C] [Category D] {F G : C ⥤ D} {f f' : A ⟶ G.obj X} {iso : F ≅ G} : f ≫ iso.inverse.eta X = f' ≫ iso.inverse.eta X → f = f' := fun h1 => (iso.component X).symm.monic f f' h1
+lemma Isomorphism.component_inv_monic [Category C] [Category D] {F G : C ⥤ D} {f f' : A ⟶ G.obj X} {iso : F ≅ G} : f ≫ iso.inverse.component X = f' ≫ iso.inverse.component X → f = f' := fun h1 => (iso.component X).symm.monic f f' h1
 
 def Isomorphism.trans_essentially_surjective [Category C] [Category D] {F G : C ⥤ D} : F ≅ G → F.EssentiallySurjective → G.EssentiallySurjective := by
   intro iso es
@@ -692,7 +716,7 @@ theorem Isomorphism.trans_full [Category C] [Category D] {F G : C ⥤ D} : F ≅
   intro iso full
   intro X Y
   intro g'
-  let f' := iso.morphism.eta X ≫ g' ≫ iso.inverse.eta Y
+  let f' := iso.morphism.component X ≫ g' ≫ iso.inverse.component Y
   have ⟨f, hf⟩ := full (X := X) (Y := Y) f'
   use f
   simp [f'] at hf

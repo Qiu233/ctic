@@ -12,7 +12,7 @@ structure Cone {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, 
 
 structure ConeHom {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, v2} C] {F : J ⥤ C} (X Y : Cone F) where
   u : X.N ⟶ Y.N
-  universal : ∀ j : J, u ≫ (Y.π'.eta j) = (X.π'.eta j)
+  universal : ∀ j : J, u ≫ (Y.π'.component j) = (X.π'.component j)
 
 instance {J : Type u} {C : Type v} [Category J] [Category C] (F : J ⥤ C) : Category (Cone F) where
   Hom X Y := ConeHom X Y
@@ -38,8 +38,9 @@ class Limit {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, v2}
 def IsLimitOf [Category.{u1, v1} J] [Category.{u2, v2} C] (L : C) (F : J ⥤ C) := ∃ limit : Limit F, limit.L.N = L
 
 -- C(c, -)
-def HomCov [Category.{u, v + 1} C] (c : C) : C ⥤ Type v where
-  obj X := c ⟶ X
+@[reducible]
+def HomCov [Category.{u, v + 1} C] (c : Cᵒᵖ) : C ⥤ Type v where
+  obj X := cᵒᵖ ⟶ X
   map {X Y} f i := i ≫ f
   map_id := by
     simp [Category.id, ← funext_iff]
@@ -51,7 +52,8 @@ def HomCov [Category.{u, v + 1} C] (c : C) : C ⥤ Type v where
     simp
 
 -- C(-, c)
-def HomCon [Category.{u, v + 1} C] (c : C) : Opposite C ⥤ Type v where
+@[reducible]
+def HomCon [Category.{u, v + 1} C] (c : C) : Cᵒᵖ ⥤ Type v where
   obj X := X.unop ⟶ c
   map {X Y} f i := f ≫ i
   map_id := by
