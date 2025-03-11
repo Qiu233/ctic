@@ -147,7 +147,7 @@ def yoneda_natural_in_x [Category.{v, v + 1} C] (F : C ⥤ Type v) : yoneda_fact
     simp [yoneda_iso, t2, t1]
     simp [Category.id]
 
-def YonedaCov [Category.{u, v + 1} C] : Cᵒᵖ ⥤ (C ⥤ Type v) where
+def YonedaCov (C : Type u) [Category.{u, v + 1} C] : Cᵒᵖ ⥤ (C ⥤ Type v) where
   obj X := Hom[X.unop, -]
   map {X Y} f := by
     simp [Category.Hom]
@@ -173,7 +173,7 @@ def YonedaCov [Category.{u, v + 1} C] : Cᵒᵖ ⥤ (C ⥤ Type v) where
     funext _ _
     simp
 
-def Yoneda.Faithful [Category.{u, v + 1} C] : (YonedaCov (C := C)).Faithful := by
+def Yoneda.Faithful [Category.{u, v + 1} C] : (YonedaCov C).Faithful := by
   intro X Y f g h1
   simp [YonedaCov] at h1
   rw [NatTrans.ext_iff] at h1
@@ -186,3 +186,28 @@ def Yoneda.Faithful [Category.{u, v + 1} C] : (YonedaCov (C := C)).Faithful := b
   specialize h1 (X.unop) (𝟙 X.unop)
   simp at h1
   exact h1
+
+def Yoneda.Full [Category.{u, u + 1} C] : (YonedaCov C).Full := by
+  intro ⟨X⟩ ⟨Y⟩
+  simp [YonedaCov]
+  intro g
+  simp [Category.Hom]
+  conv =>
+    rhs
+    intro a
+    rw [NatTrans.ext_iff]
+    simp
+  let f1 := yoneda_iso (Hom[Y, -]) X
+  let f2 := f1.morphism g
+  use f2
+  simp [f2, f1]
+  simp [yoneda_iso, t1]
+  funext c h
+  have := g.naturality h
+  simp [Category.comp] at this
+  simp [HomCov] at this
+  have := funext_iff.mp this (𝟙 X)
+  simp at this
+  rw [this]
+
+def Yoneda.FullyFaithful [Category.{u, u + 1} C] : (YonedaCov C).FullyFaithful := ⟨Yoneda.Full, Yoneda.Faithful⟩
