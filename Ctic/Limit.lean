@@ -24,12 +24,20 @@ instance {J : Type u} {C : Type v} [Category J] [Category C] (F : J ⥤ C) : Cat
   assoc := by simp
 
 class Initial {C : Type u} [Category C] (X : C) where
-  morphism : (y : C) → X ⟶ Y
+  morphism : (Y : C) → X ⟶ Y
   unique : ∀ {Y : C} {f : X ⟶ Y}, f = morphism Y
 
 class Terminal {C : Type u} [Category C] (Y : C) where
   morphism : (X : C) → X ⟶ Y
   unique : ∀ {X : C} {f : X ⟶ Y}, f = morphism X
+
+theorem Initial.self [Category C] {X : C} {i : Initial X} : i.morphism X = 𝟙 X := by
+  have := i.unique (f := 𝟙 X)
+  simp [this]
+
+theorem Terminal.self [Category C] {X : C} {t : Terminal X} : t.morphism X = 𝟙 X := by
+  have := t.unique (f := 𝟙 X)
+  simp [this]
 
 class Limit {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, v2} C] (F : J ⥤ C) : Type max u1 u2 v1 v2 where
   L : Cone F
