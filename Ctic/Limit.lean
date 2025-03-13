@@ -186,44 +186,48 @@ example [Category C] [Category D] (F : C ⥤ D) : Category.Equivalence (Comma Fu
     case forward => simp [Functor.comp, Category.comp, Functor.id, Category.id, NatTrans.comp]; simp [NatTrans.id]; rfl
     case backward => simp [Functor.comp, Category.comp, Functor.id, Category.id, NatTrans.comp]; simp [NatTrans.id]; rfl
 
-def DiscreteCategory (α : Type u) := α
+def Discrete (α : Type u) := α
 
-instance [DecidableEq α] : DecidableEq (DiscreteCategory α) := inferInstance
+instance [DecidableEq α] : DecidableEq (Discrete α) := inferInstance
 
-instance : Category (DiscreteCategory α) where
+instance : Category (Discrete α) where
   Hom X Y := X = Y
   id X := by simp
   comp f g := by simp [f, g]
   assoc := by simp
 
-inductive BinCat where
+inductive Discrete.Binary : Type u where
   | X | Y
 deriving BEq
 
-abbrev BinProd.obj [Category C] (X Y : C) : DiscreteCategory BinCat → C := fun x =>
+notation:max " 𝟐 " => Discrete Discrete.Binary
+
+@[simp]
+private abbrev BinProd.obj [Category C] (X Y : C) : 𝟐 → C := fun x =>
   match x with
   | .X => X
   | .Y => Y
 
-abbrev BinProd.map [Category C] (X Y : C) {A B : DiscreteCategory BinCat} : (A ⟶ B) → (BinProd.obj X Y A ⟶ BinProd.obj X Y B) := fun f => by
+@[simp]
+private abbrev BinProd.map [Category C] (X Y : C) {A B : 𝟐} : (A ⟶ B) → (BinProd.obj X Y A ⟶ BinProd.obj X Y B) := fun f => by
   simp [BinProd.obj]
   rw [f]
   cases B with
   | X => exact 𝟙 X
   | Y => exact 𝟙 Y
 
-def BinProd [Category C] (X Y : C) := Limit F where
-  F : (DiscreteCategory BinCat) ⥤ C := by
-    apply Functor.mk (BinProd.obj X Y) (BinProd.map X Y) ?map_id ?map_comp
-    case map_id =>
-      intro A
-      simp [BinProd.obj]
-      cases A <;> simp
-    case map_comp =>
-      intro A B C f g
-      cases A <;> (cases B <;> (cases C <;> simp [f, g]))
-      . trivial
-      . trivial
+@[reducible]
+def BinProd.functor [Category C] (X Y : C) : 𝟐 ⥤ C where
+  obj := BinProd.obj X Y
+  map := BinProd.map X Y
+  map_id {A} := by cases A <;> simp
+  map_comp {A B C} f g := by
+    cases A <;> (cases B <;> (cases C <;> simp [f, g]))
+    . trivial
+    . trivial
+
+@[reducible]
+def BinProd [Category C] (X Y : C) := Limit (BinProd.functor X Y)
 
 -- instance [Category C] {A B : C} : Category (BinProd A B) where
 --   Hom X Y := X.L ⟶ Y.L

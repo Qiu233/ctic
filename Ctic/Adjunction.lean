@@ -50,65 +50,6 @@ example {X : C} {Y : D} : Hom[F X, Y] ≅ Hom[X, G Y] := by
 
 end Adjunction
 
-notation:max "Hom[" F "(" "-" ")" ", " Y "]" => Fᵒᵖ ⋙ Hom[-, Y]
-notation:max "Hom[" X ", " F "(" "-" ")" "]" => F ⋙ Hom[X, -]
-
-open Lean in
-@[app_unexpander Functor.comp]
-def unexpand_Functor_comp_HomCon : PrettyPrinter.Unexpander
-  | `($(_) $fᵒᵖ Hom[-, $y]) => `(Hom[$f(-), $y])
-  | _ => throw ()
-
-open Lean in
-@[app_unexpander Functor.comp]
-def unexpand_Functor_comp_HomCov : PrettyPrinter.Unexpander
-  | `($(_) $f Hom[$x, -]) => `(Hom[$x, $f(-)])
-  | _ => throw ()
-
-open Lean in
-@[app_unexpander Functor.obj]
-def unexpand_Functor_comp_HomCon_obj : PrettyPrinter.Unexpander
-  | `($(_) Hom[$f(-), $y] $xᵒᵖ) => `(Hom[$f $x, $y])
-  | `($(_) Hom[$f(-), $y] $x) =>
-    match x with
-    | `({ unop := $x }) => `(Hom[$f $x, $y])
-    | _ => `(Hom[$f $xᵒᵖ, $y])
-  | _ => throw ()
-
-open Lean in
-@[app_unexpander Functor.obj]
-def unexpand_Functor_HomCon_obj : PrettyPrinter.Unexpander
-  | `($(_) Hom[-, $y] $xᵒᵖ) => `(Hom[$x, $y])
-  | `($(_) Hom[-, $y] $x) =>
-    match x with
-    | `({ unop := $x }) => `(Hom[$x, $y])
-    | _ => `(Hom[$xᵒᵖ, $y])
-  | _ => throw ()
-
-open Lean in
-@[app_unexpander Functor.obj]
-def unexpand_Functor_comp_HomCov_obj : PrettyPrinter.Unexpander
-  | `($(_) Hom[$x, $f(-)] $y) => `(Hom[$x, $f $y])
-  | _ => throw ()
-
-open Lean in
-@[app_unexpander Functor.obj]
-def unexpand_Functor_HomCov_obj : PrettyPrinter.Unexpander
-  | `($(_) Hom[$x, -] $y) => `(Hom[$x, $y])
-  | _ => throw ()
-
-@[simp]
-theorem HomCon.comp_obj_def [Category C] [Category D] {F : C ⥤ D} {X : C} {Y : D} :
-    Hom[F(-), Y] { unop := X } = Hom[F X, Y] := by rfl
-
-@[simp]
-theorem HomCon.comp_obj_def' [Category C] [Category D] {F : C ⥤ D} {X : C} {Y : D} :
-    Hom[F(-), Y] Xᵒᵖ = Hom[F X, Y] := by rfl
-
-@[simp]
-theorem Functor.op_map_def [Category C] [Category D] {F : C ⥤ D} {X : C} {Y : C} {f : X ⟶ Y} :
-    Fᵒᵖ.map f = F.map f := by rfl
-
 namespace Adjunction
 
 variable {C : Type u} {D : Type v}

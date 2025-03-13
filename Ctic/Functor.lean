@@ -65,9 +65,9 @@ def Functor.opposite [Category C] [Category D] (F : C ⥤ D) : Cᵒᵖ ⥤ Dᵒ�
 instance [Category C] [Category D] : HasOpposite (C ⥤ D) (Cᵒᵖ ⥤ Dᵒᵖ) where
   op F := F.opposite
 
-instance Category.product (C : Type u) (D : Type v) [Category C] [Category D] : Category (C × D) where
-  Hom X Y := (X.fst ⟶ Y.fst) × (X.snd ⟶ Y.snd)
-  id X := (𝟙 X.fst, 𝟙 X.snd)
+instance Category.product (C : Type u) (D : Type v) [Category.{u, a} C] [Category.{v, b} D] : Category.{max u v, max 1 a b} (C × D) where
+  Hom X Y := PProd.{a, b} (X.fst ⟶ Y.fst) (X.snd ⟶ Y.snd)
+  id X := ⟨𝟙 X.fst, 𝟙 X.snd⟩
   comp {X Y Z} := fun ⟨fc, fd⟩ ⟨gc, gd⟩ => ⟨fc ≫ gc, fd ≫ gd⟩
   assoc {W X Y Z} := by simp [Category.assoc]
 
@@ -125,7 +125,7 @@ instance [Category C] [Category D] : Category (C ⥤ D) where
   id_comp := NatTrans.id_comp
   comp_id := NatTrans.comp_id
 
-theorem Functor.iso {C : Type u} {D : Type v} [Category C] [Category D] {F : C ⥤ D} {X Y : C} {f : X ⟶ Y} : Isomorphic f → Isomorphic (F.map f) := by
+theorem Functor.iso {C : Type u} {D : Type v} [Category C] [Category D] {F : C ⥤ D} {X Y : C} {f : X ⟶ Y} : Invertible f → Invertible (F.map f) := by
   intro ⟨i, iso⟩
   use F.map i
   simp [← Functor.map_comp, iso, Functor.map_id]
@@ -135,6 +135,7 @@ structure Comma [Category.{u1, v1} C] [Category.{u2, v2} D] [Category.{u3, v3} E
   e : E
   f : F.obj d ⟶ G.obj e
 
+@[ext]
 structure CommaHom [Category.{u1, v1} C] [Category.{u2, v2} D] [Category.{u3, v3} E] {F : D ⥤ C} {G : E ⥤ C} (X Y : Comma F G) : Type max u1 u2 u3 v1 v2 v3 where
   k : X.d ⟶ Y.d
   h : X.e ⟶ Y.e
@@ -322,6 +323,32 @@ def Isomorphism.component [Category C] [Category D] {F G : C ⥤ D} (iso : F ≅
     specialize this X
     simp [this, Category.id, NatTrans.id]
 
+def Isomorphism.of_component [Category C] [Category D] {F G : C ⥤ D}
+    (η : ∀ (X : C), F.obj X ≅ G.obj X)
+    (natural : ∀ {X Y : C} (f : X ⟶ Y), (η X).morphism ≫ G.map f = F.map f ≫ (η Y).morphism) : F ≅ G where
+  morphism := ⟨fun x => η x, natural⟩
+  inverse := ⟨fun x => (η x).inverse, by
+    intro X Y f
+    simp
+    apply (η X).epic
+    simp
+    apply (η Y).monic
+    simp [← Category.assoc]
+    symm
+    apply natural
+    ⟩
+  forward := by simp [Category.comp, NatTrans.comp]; rfl
+  backward := by simp [Category.comp, NatTrans.comp]; rfl
+
+def Isomorphism.component_eta [Category C] [Category D] {F G : C ⥤ D} (iso : F ≅ G) :
+    Isomorphism.of_component iso.component iso.morphism.naturality = iso := by
+  simp [of_component]
+  rw [Isomorphism.ext_iff]
+  simp
+  rw [NatTrans.ext_iff]
+  simp
+  rfl
+
 @[simp]
 theorem Isomorphism.component_def [Category C] [Category D] {F G : C ⥤ D} {iso : F ≅ G} {X : C} : (iso.component X).morphism = iso.morphism.component X := by simp [Isomorphism.component]
 
@@ -488,10 +515,10 @@ noncomputable def Category.Equivalence.of_fully_faithful_essentially_surjective 
       simp [Functor.comp]
       simp [eta1, eta2]
 
-theorem Functor.FullyFaithful.reflects {C D : Type*} [Category C] [Category D] {F : C ⥤ D} {X Y : C} {f : X ⟶ Y} : F.FullyFaithful → Isomorphic (F.map f) → Isomorphic f := by
+theorem Functor.FullyFaithful.reflects {C D : Type*} [Category C] [Category D] {F : C ⥤ D} {X Y : C} {f : X ⟶ Y} : F.FullyFaithful → Invertible (F.map f) → Invertible f := by
   intro ff
   intro ⟨g, hg⟩
-  simp [Isomorphic]
+  simp [Invertible]
   have := ff.left (X := Y) (Y := X) g
   use this.choose
   apply And.intro
@@ -736,3 +763,77 @@ theorem Isomorphism.trans_faithful [Category C] [Category D] {F G : C ⥤ D} : F
   apply iso.component_inv_monic
   simp [← Category.assoc]
   rw [iso.inverse.naturality]
+
+theorem NatTrans.epic_of_components_epic [Category C] [Category D] {F G : C ⥤ D} (α : F ⟹ G) : (∀ X, Epic (α X)) → Epic (C := C ⥤ D) α := by
+  intro h1 H g h h2
+  simp [Epic] at h1
+  rw [NatTrans.ext_iff]
+  funext X
+  apply h1
+  simp [Category.comp, NatTrans.comp] at h2
+  rw [NatTrans.ext_iff, funext_iff] at h2
+  apply h2
+
+theorem NatTrans.monic_of_components_monic [Category C] [Category D] {F G : C ⥤ D} (α : F ⟹ G) : (∀ X, Monic (α X)) → Monic (C := C ⥤ D) α := by
+  intro h1 H g h h2
+  simp [Monic] at h1
+  rw [NatTrans.ext_iff]
+  funext X
+  apply h1
+  simp [Category.comp, NatTrans.comp] at h2
+  rw [NatTrans.ext_iff, funext_iff] at h2
+  apply h2
+
+theorem NatTrans.isic_of_components_isic [Category C] [Category D] {F G : C ⥤ D} (α : F ⟹ G) : (∀ X, Invertible (α X)) → Invertible (C := C ⥤ D) α := by
+  intro h1
+  let t (X) : G X ⟶ F X := (h1 X).choose
+  let s : G ⟹ F := {
+      component := t,
+      naturality := by
+        intro X Y f
+        have := (h1 X).choose_spec
+        simp [t, this]
+        have ⟨_, e⟩ := (h1 X).monic_and_epic
+        apply e
+        simp [this]
+        have ⟨m, _⟩ := (h1 Y).monic_and_epic
+        apply m
+        rw [← Category.assoc]
+        have := (h1 Y).choose_spec
+        rw [this.2]
+        simp [α.naturality]
+        }
+
+  simp [Invertible]
+  use s
+  apply And.intro
+  . simp [Category.comp, NatTrans.comp, Category.id, NatTrans.id]
+    congr
+    funext x
+    simp [t]
+    have := (h1 x).choose_spec
+    simp [this]
+  . simp [Category.comp, NatTrans.comp, Category.id, NatTrans.id]
+    congr
+    funext x
+    simp [t]
+    have := (h1 x).choose_spec
+    simp [this]
+
+def Invertible.of_bijective_of_sets {X Y : Type u} [DecidableEq Y] {f : X ⟶ Y} (bij : Function.Bijective f) : Invertible f := by
+  let t := Equiv.ofBijective f bij
+  use t.invFun
+  apply And.intro
+  . have := t.left_inv
+    dsimp [Function.LeftInverse] at this
+    funext x
+    apply this
+  . have := t.right_inv
+    dsimp [Function.LeftInverse] at this
+    funext x
+    apply this
+
+def Invertible.of_monic_and_epic_of_sets {X Y : Type u} [DecidableEq Y] {f : X ⟶ Y} (monic : Monic f) (epic : Epic f) : Invertible f := by
+  rw [Function.Monic_iff_Injective] at monic
+  rw [Function.Epic_iff_Surjective] at epic
+  apply Invertible.of_bijective_of_sets ⟨monic, epic⟩

@@ -151,11 +151,3 @@ def Nat.Alg.Initial : Initial Nat.Alg where
       simp [hf.2]
       have : ((Sum.inr (f n)) : Unit ⊕ Y.A) = (Sum.inr (Nat.rec (Y.α (Sum.inl ())) (fun _ ih ↦ Y.α (Sum.inr ih)) n)) := by congr
       rw [this]
-
-
--- example {F : C ⥤ C} {X : Algebra F} (h : Initial X) : X.A ≅ F X.A where
---   inverse := by sorry
---   forward := sorry
---   backward := sorry
---   morphism := by
-    -- have := h.morphism

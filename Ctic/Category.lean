@@ -16,7 +16,7 @@ infixl:300 " ≫ " => Category.comp
 
 attribute [simp] Category.id_comp Category.comp_id Category.assoc
 
-instance : Category (Type u) where
+instance : Category.{u + 1} (Type u) where
   Hom x y := x → y
   id x := _root_.id
   comp f g := Function.comp g f
@@ -36,6 +36,9 @@ infix:100 " ≅ " => Isomorphism
 
 attribute [simp] Isomorphism.forward Isomorphism.backward
 
+instance : CoeOut (X ≅ Y) (X ⟶ Y) where
+  coe f := f.morphism
+
 private theorem Isomorphism.ext_aux {f g : X ≅ Y} : f.morphism = g.morphism → f.inverse = g.inverse := by
   intro h
   rw [← Category.id_comp (f := f.inverse)]
@@ -52,10 +55,10 @@ theorem Isomorphism.ext {f g : X ≅ Y} : f.morphism = g.morphism → f = g := f
 
 def Isomorphism.id [Category C] (X : C) : X ≅ X := Isomorphism.mk (𝟙 X) (𝟙 X) (by simp) (by simp)
 
-def Isomorphic (f : X ⟶ Y) : Prop := ∃ (g : Y ⟶ X), f ≫ g = 𝟙 X ∧ g ≫ f = 𝟙 Y
+def Invertible (f : X ⟶ Y) : Prop := ∃ (g : Y ⟶ X), f ≫ g = 𝟙 X ∧ g ≫ f = 𝟙 Y
 
 @[simp]
-theorem Isomorphism.isomorphic (f : X ≅ Y) : Isomorphic f.morphism := by
+theorem Isomorphism.invertible (f : X ≅ Y) : Invertible f.morphism := by
   exists f.inverse
   simp [f.forward, f.backward]
 
@@ -90,13 +93,13 @@ def Isomorphism.comp (f : X ≅ Y) (g : Y ≅ Z) : X ≅ Z where
     simp
 
 @[simp]
-theorem Isomorphism.isomorphic_inv (f : X ≅ Y) : Isomorphic f.inverse := by
-  have := f.symm.isomorphic
+theorem Isomorphism.invertible_inv (f : X ≅ Y) : Invertible f.inverse := by
+  have := f.symm.invertible
   simp [Isomorphism.symm] at this
   apply this
 
 class Groupoid (C : Type u) extends Category C where
-  iso {X Y : C} (f : X ⟶ Y) : Isomorphic f
+  iso {X Y : C} (f : X ⟶ Y) : Invertible f
 
 @[ext]
 structure SliceUnder (c : C) : Type max u v where
@@ -161,7 +164,7 @@ instance [Category C] : HasOpposite C (Opposite C) where
 instance [Category C] : HasOpposite (Opposite C) C where
   op := Opposite.unop
 
-@[reducible]
+@[reducible, simp]
 instance Category.opposite [inst : Category C] : Category Cᵒᵖ where
   Hom x y := inst.Hom y.unop x.unop
   id x := inst.id x.unop
@@ -192,7 +195,7 @@ def Monic (f : X ⟶ Y) := ∀ ⦃W : C⦄ (g h : W ⟶ X), g ≫ f = h ≫ f �
 
 def Epic (f : X ⟶ Y) := ∀ ⦃Z : C⦄ (g h : Y ⟶ Z), f ≫ g = f ≫ h → g = h
 
-theorem Isomorphic.monic_and_epic {f : X ⟶ Y} : Isomorphic f → Monic f ∧ Epic f := by
+theorem Invertible.monic_and_epic {f : X ⟶ Y} : Invertible f → Monic f ∧ Epic f := by
   intro ⟨g', h1, h2⟩
   apply And.intro
   . intro W g h h3
@@ -210,10 +213,10 @@ theorem Isomorphic.monic_and_epic {f : X ⟶ Y} : Isomorphic f → Monic f ∧ E
     rw [Category.assoc]
     simp [h2]
 
-theorem Isomorphism.monic_and_epic (f : X ≅ Y) : Monic f.morphism ∧ Epic f.morphism := f.isomorphic.monic_and_epic
+theorem Isomorphism.monic_and_epic (f : X ≅ Y) : Monic f.morphism ∧ Epic f.morphism := f.invertible.monic_and_epic
 
-theorem Isomorphism.monic (f : X ≅ Y) : Monic f.morphism := f.isomorphic.monic_and_epic.left
-theorem Isomorphism.epic (f : X ≅ Y) : Epic f.morphism := f.isomorphic.monic_and_epic.right
+theorem Isomorphism.monic (f : X ≅ Y) : Monic f.morphism := f.invertible.monic_and_epic.left
+theorem Isomorphism.epic (f : X ≅ Y) : Epic f.morphism := f.invertible.monic_and_epic.right
 
 @[ext]
 structure Monomorphism (X Y : C) where
@@ -256,16 +259,13 @@ theorem Monomorphism.monic_of_comp {f : X ↣ Y} {g : X ⟶ W} {h : W ⟶ Y} : f
 /--
 Monomorphisms are precisely injections for sets/types.
 -/
-example {X Y : Type} {f : X ⟶ Y} : Function.Injective f ↔ Monic f := by
+theorem Function.Monic_iff_Injective {X Y : Type u} {f : X ⟶ Y} : Monic f ↔ Function.Injective f := by
   constructor
-  . intro h1 W g h h2
-    funext x
-    apply h1 (funext_iff.mp h2 x)
   . intro h1 x y h2
     simp [Monic] at h1
     simp [Category.Hom, Category.comp] at h1
-    let g : Fin 2 → X := fun t => if t = 0 then x else y
-    let h : Fin 2 → X := fun t => if t = 0 then y else x
+    let g : ULift (Fin 2) → X := fun t => if t = ⟨0⟩ then x else y
+    let h : ULift (Fin 2) → X := fun t => if t = ⟨0⟩ then y else x
     have : f ∘ g = f ∘ h := by
       funext t
       simp [g, h]
@@ -273,9 +273,45 @@ example {X Y : Type} {f : X ⟶ Y} : Function.Injective f ↔ Monic f := by
       . exact h2
       . exact h2.symm
     have := h1 g h this
-    have conf := funext_iff.mp this 0
+    have conf := funext_iff.mp this ⟨0⟩
     simp [g, h] at conf
     exact conf
+  . intro h1 W g h h2
+    funext x
+    apply h1 (funext_iff.mp h2 x)
+
+theorem Function.Epic_iff_Surjective {X Y : Type u} [DecidableEq Y] {f : X ⟶ Y} : Epic f ↔ Function.Surjective f := by
+  constructor
+  . intro e b
+    simp [Epic] at e
+    apply not_not.mp
+    intro h1
+    simp at h1
+    let g : Y → ULift.{u, 0} (Fin 2) := fun t => if t = b then ⟨1⟩ else ⟨0⟩
+    let h : Y → ULift.{u, 0} (Fin 2) := fun t => ⟨0⟩
+    have h2 := e g h
+    have h3 : f ≫ g = f ≫ h := by
+      funext t
+      simp [Category.comp]
+      trans ⟨0⟩
+      . simp [g]
+        simp [h1]
+      . simp [h]
+    have h4 := h2 h3
+    have h5 : g b ≠ h b := by simp [g, h]; trivial
+    apply h5
+    simp [h4]
+  . intro surj Z g h h1
+    simp [Function.Surjective] at surj
+    simp [Category.comp] at h1
+    funext t
+    have ⟨a, ha⟩ := surj t
+    cases ha
+    revert a
+    rw [← funext_iff]
+    rw [← Function.comp_def]
+    rw [← Function.comp_def]
+    exact h1
 
 /-- X ↣ Y ↠ X -/
 structure Retract [Category C] (Y : C) where
