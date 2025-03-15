@@ -184,9 +184,8 @@ def delab_Isomorphism_morphism_MonoidalCategory : Delab := do
 
 end
 
--- class CartesianCategory (C : Type u) extends MonoidalCategory C where
---   terminal : Terminal I
---   cartesian :
+class CartesianCategory.{v, u} (C : Type u) extends MonoidalCategory.{v, u} C where
+  cartesian (X Y : C) : Σ' (r : Contravariant.Representation Hom[Δ(-), Diagram.Discrete.Binary.{v, u} X Y]), r.obj ≅ X ⊗ Y
 
 @[reducible]
 def Prod.bifunctor : (Type u × Type u) ⥤ Type u where
@@ -229,5 +228,32 @@ instance : MonoidalCategory (Type u) where
   natural {X Y Z X' Y' Z'} f g h := by rfl
   triangle {X Y} := by rfl
   pentagon {W X Y Z} := by rfl
+
+instance : CartesianCategory (Type u) where
+  cartesian {X Y} := by
+    let t : Contravariant.Representation Hom[Δ(-), Diagram.Discrete.Binary X Y] := ⟨X ⊗ Y, by
+      let s : Δ (X ⊗ Y) ⟶ Diagram.Discrete.Binary X Y := by
+        use fun
+          | .X => Prod.fst
+          | .Y => Prod.snd
+        intro a b f
+        cases a <;> (cases b <;> (first | rfl | cases f.down))
+      let p := Yoneda.Contravariant.t2 Hom[Δ(-), Diagram.Discrete.Binary X Y] (X ⊗ Y) s
+      let q : Hom[Δ(-), Diagram.Discrete.Binary X Y] ⟹ HomCon (X ⊗ Y) := by
+        use fun ⟨P⟩ f p => ⟨f.component .X p, f.component .Y p⟩
+        intros
+        rfl
+      use p, q
+      . rfl
+      . simp [Category.id, Category.comp, NatTrans.id, NatTrans.comp]
+        congr
+        funext ⟨P⟩ f
+        rw [NatTrans.ext_iff]
+        funext t
+        cases t <;> rfl
+      ⟩
+    use t
+    simp [t]
+    apply Isomorphism.id
 
 end Prod

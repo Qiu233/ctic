@@ -2,7 +2,7 @@ import Ctic.Category
 namespace CTIC
 
 @[ext]
-structure Functor (C : Type u) (D : Type v) [Category.{a} C] [Category.{b} D] : Type max u v a b where
+structure Functor (C : Type u) (D : Type v) [Category C] [Category D] where
   obj : C → D
   map {X Y : C} : X ⟶ Y → obj X ⟶ obj Y
   map_id {X : C} : map (𝟙 X) = 𝟙 (obj X) := by aesop
@@ -149,13 +149,14 @@ theorem Functor.iso {C : Type u} {D : Type v} [Category C] [Category D] {F : C �
   use F.map i
   simp [← Functor.map_comp, iso, Functor.map_id]
 
-structure Comma [Category.{u1, v1} C] [Category.{u2, v2} D] [Category.{u3, v3} E] (F : D ⥤ C) (G : E ⥤ C) : Type max u1 u2 u3 v1 v2 v3 where
+@[ext]
+structure Comma [Category C] [Category D] [Category E] (F : D ⥤ C) (G : E ⥤ C) where
   d : D
   e : E
   f : F.obj d ⟶ G.obj e
 
 @[ext]
-structure CommaHom [Category.{u1, v1} C] [Category.{u2, v2} D] [Category.{u3, v3} E] {F : D ⥤ C} {G : E ⥤ C} (X Y : Comma F G) : Type max u1 u2 u3 v1 v2 v3 where
+structure CommaHom [Category C] [Category D] [Category E] {F : D ⥤ C} {G : E ⥤ C} (X Y : Comma F G) where
   k : X.d ⟶ Y.d
   h : X.e ⟶ Y.e
   commu : X.f ≫ G.map h = F.map k ≫ Y.f
@@ -180,6 +181,8 @@ instance {C D E : Type*} [Category C] [Category D] [Category E] (F : D ⥤ C) (G
 def Functor.const {C D : Type*} [Category C] [Category D] : D ⥤ C ⥤ D where
   obj d := { obj := fun _ => d, map := fun _ => 𝟙 d }
   map {X Y} f := NatTrans.mk (fun _ => f) (by simp)
+
+scoped notation:max "Δ" => Functor.const
 
 def constFunctor {C D : Type*} [Category C] [Category D] (d : D) : C ⥤ D := Functor.const.obj d
 
@@ -216,11 +219,11 @@ private lemma Functor.const.eta3 [Category C] [Category D] {X : D} {Y : C} : Fun
 @[simp]
 private lemma Functor.const.eta4 [Category C] [Category D] {X : D} {Y : C} : (Functor.const X).obj Y = X := by simp [Functor.const]
 
-def Comma.dom [Category.{u1, v1} C] [Category.{u2, v2} D] [Category.{u3, v3} E] {F : D ⥤ C} {G : E ⥤ C} : Comma F G ⥤ D where
+def Comma.dom [Category C] [Category D] [Category E] {F : D ⥤ C} {G : E ⥤ C} : Comma F G ⥤ D where
   obj := Comma.d
   map := CommaHom.k
 
-def Comma.cod [Category.{u1, v1} C] [Category.{u2, v2} D] [Category.{u3, v3} E] {F : D ⥤ C} {G : E ⥤ C} : Comma F G ⥤ E where
+def Comma.cod [Category C] [Category D] [Category E] {F : D ⥤ C} {G : E ⥤ C} : Comma F G ⥤ E where
   obj := Comma.e
   map := CommaHom.h
 

@@ -39,11 +39,11 @@ theorem Terminal.self [Category C] {X : C} {t : Terminal X} : t.morphism X = �
   have := t.unique (f := 𝟙 X)
   simp [this]
 
-class Limit {J : Type u1} {C : Type u2} [Category J] [Category C] (F : J ⥤ C) where
+structure Limit {J C : Type*} [Category J] [Category C] (F : J ⥤ C) where
   L : Cone F
   final : Terminal L
 
-def IsLimitOf [Category J] [Category C] (L : C) (F : J ⥤ C) := ∃ limit : Limit F, limit.L.N = L
+-- def IsLimitOf [Category J] [Category C] (L : C) (F : J ⥤ C) := ∃ limit : Limit F, limit.L.N = L
 
 -- C(c, -)
 @[reducible]
@@ -214,56 +214,35 @@ instance : Category (Discrete α) where
   comp f g := ⟨Eq.trans f.down g.down⟩
   assoc := by simp
 
-inductive Discrete.Binary : Type u where
+inductive Discrete.Binary : Type where
   | X | Y
 deriving BEq
 
-notation:max "𝟐" => Discrete Discrete.Binary
+scoped notation:max "𝟐" => Discrete Discrete.Binary
 
 @[simp]
-private abbrev BinProd.obj [Category C] (X Y : C) : 𝟐 → C := fun x =>
+private abbrev Diagram.Discrete.Binary.obj [Category C] (X Y : C) : 𝟐 → C := fun x =>
   match x with
   | .X => X
   | .Y => Y
 
 @[simp]
-private abbrev BinProd.map [Category C] (X Y : C) {A B : 𝟐} : (A ⟶ B) → (BinProd.obj X Y A ⟶ BinProd.obj X Y B) := fun f => by
-  simp [BinProd.obj]
+private abbrev Diagram.Discrete.Binary.map [Category C] (X Y : C) {A B : 𝟐} : (A ⟶ B) → (Diagram.Discrete.Binary.obj X Y A ⟶ Diagram.Discrete.Binary.obj X Y B) := fun f => by
+  simp [Diagram.Discrete.Binary.obj]
   rw [f.down]
   cases B with
   | X => exact 𝟙 X
   | Y => exact 𝟙 Y
 
 @[reducible]
-def BinProd.functor [inst : Category C] (X Y : C) : 𝟐 ⥤ C where
-  obj := BinProd.obj X Y
-  map := BinProd.map X Y
+def Diagram.Discrete.Binary.{v, u} {C : Type u} [inst : Category.{v, u} C] (X Y : C) : (𝟐) ⥤ C where
+  obj := Diagram.Discrete.Binary.obj X Y
+  map := Diagram.Discrete.Binary.map X Y
   map_id {A} := by cases A <;> simp
   map_comp {A B C} f g := by
     cases A <;> (cases B <;> (cases C <;> simp [f.down, g.down]))
-    . simp [Category.Hom] at f
-      apply False.elim f.down
-    . simp [Category.Hom] at f
-      apply False.elim f.down
-
-@[reducible]
-def BinProd [Category C] (X Y : C) := Limit (BinProd.functor X Y)
-
--- instance [Category C] {A B : C} : Category (BinProd A B) where
---   Hom X Y := X.L ⟶ Y.L
---   id X := 𝟙 X.L
---   comp f g := f ≫ g
---   assoc := by simp
-
--- structure CatOfBinProd (C : Type u) [Category C] where
---   A : C
---   B : C
---   prod : BinProd A B
-
--- instance [Category C] : Category (CatOfBinProd C) where
---   Hom X Y := (p : X.prod.L.N ⟶ Y.prod.L.N) ×' ()
--- #check Comma ()
--- #check HomCov
+    . cases f.down
+    . cases f.down
 
 def Hom {C : Type u} [Category.{v} C] : (Cᵒᵖ × C) ⥤ Type v where
   obj := fun (X, Y) => X.unop ⟶ Y

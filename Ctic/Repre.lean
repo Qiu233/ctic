@@ -421,30 +421,24 @@ end Contravariant
 
 end Yoneda
 
-structure RepresentationCov [Category.{u} C] (F : C ⥤ Type u) where
-  obj : C
-  iso : Hom[obj, -] ≅ F
+namespace Contravariant
 
-structure RepresentationContra [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) where
+@[ext]
+structure Representation.{v, u} [Category.{v, u} C] (F : Cᵒᵖ ⥤ Type v) where
   obj : C
   iso : Hom[-, obj] ≅ F
 
-class inductive Representable.Covariant [Category.{u} C] (F : C ⥤ Type u) : Prop where
-  | intro (rep : RepresentationCov F)
+class inductive Representable.{v, u} [Category.{v, u} C] (F : Cᵒᵖ ⥤ Type v) : Prop where
+  | intro (rep : Representation F)
 
-class inductive Representable.Contravariant [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) : Prop where
-  | intro (rep : RepresentationContra F)
+protected abbrev CategoryOfElements.{v, u} {C : Type u} [Category.{v, u} C] (F : Cᵒᵖ ⥤ Type v) : Type max u v := Comma (Yoneda.Contravariant.Embedding (C := C)) (TrivialFunctor F)
 
-abbrev CategoryOfElements {C : Type u} [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) := Comma (Yoneda.Contravariant.Embedding (C := C)) (TrivialFunctor F)
+scoped prefix:max "∫ " => Contravariant.CategoryOfElements
 
-scoped prefix:max "∫ " => CategoryOfElements
-
-namespace Representable.Contravariant
-
-variable {C : Type u} [Category.{u} C] {F : Cᵒᵖ ⥤ Type u}
+variable {C : Type u} [Category.{u, u} C] {F : Cᵒᵖ ⥤ Type u}
 
 lemma isic_of_terminal_in_category_of_elements
-    [decEq : ∀ X, DecidableEq (F X)] {L : CategoryOfElements F} (terminal : Terminal L) : Invertible L.f := by
+    [decEq : ∀ X, DecidableEq (F X)] {L : ∫ F} (terminal : Terminal L) : Invertible L.f := by
   obtain ⟨c, u, α⟩ := L
   change Hom[-, c] ⟶ F at α
   apply NatTrans.isic_of_components_isic
@@ -454,8 +448,8 @@ lemma isic_of_terminal_in_category_of_elements
   . rw [Function.Monic_iff_Injective]
     intro f g h1
     change Xᵒᵖ ⟶ c at f g
-    let s : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse ((α.component X) f)⟩
-    let t : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse ((α.component X) g)⟩
+    let s : ∫ F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse ((α.component X) f)⟩
+    let t : ∫ F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse ((α.component X) g)⟩
     let p := terminal.morphism s
     let q := terminal.morphism t
     have h2 : s = t := by simp [s, t]; rw [h1]
@@ -505,7 +499,7 @@ lemma isic_of_terminal_in_category_of_elements
   . rw [Function.Epic_iff_Surjective]
     intro e
     change F X at e
-    let s : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse e⟩
+    let s : ∫ F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse e⟩
     have h1 : s.f.component X (𝟙 X) = e := by
       simp [s, Yoneda.Contravariant.iso]
       change (F.map (𝟙 X)) e = e
@@ -521,35 +515,40 @@ lemma isic_of_terminal_in_category_of_elements
     have h4 := Eq.trans h3 h1
     use t.k
 
-lemma terminal_in_category_of_elements_of_isic {L : CategoryOfElements F} (isic : Invertible L.f) : Nonempty (Terminal L) := by
-  refine Nonempty.intro ⟨?morphism, ?unique⟩
-  case morphism =>
-    intro X
-    let t : Hom[-, X.d] ⟶ Hom[-, L.d] := X.f ≫ isic.choose
-    use (Yoneda.Contravariant.FullyFaithful (C := C)).inv t, ()
-    simp [t]
-    have := isic.choose_spec
-    rw [← Category.assoc]
-    rw [this.2]
-    simp
-  case unique =>
-    intro X f
-    obtain ⟨k, h, commu⟩ := f
-    simp at commu
-    simp
-    congr
-    apply (Yoneda.Contravariant.FullyFaithful (C := C)).right
-    rw [(Yoneda.Contravariant.FullyFaithful (C := C)).map_inv]
-    rw [commu]
-    rw [← Category.assoc]
-    rw [isic.choose_spec.1]
-    simp
+noncomputable
+def terminal_in_category_of_elements_of_isic.morphism {L : ∫ F} (isic : Invertible L.f) : (X : ∫ F) → X ⟶ L := by
+  intro X
+  let t : Hom[-, X.d] ⟶ Hom[-, L.d] := X.f ≫ isic.choose
+  use (Yoneda.Contravariant.FullyFaithful (C := C)).inv t, ()
+  simp [t]
+  have := isic.choose_spec
+  rw [← Category.assoc]
+  rw [this.2]
+  simp
+
+lemma terminal_in_category_of_elements_of_isic.unique {L : ∫ F} (isic : Invertible L.f) :
+    ∀ (X : ∫ F) (f : X ⟶ L), f = terminal_in_category_of_elements_of_isic.morphism isic X := by
+  intro X f
+  obtain ⟨k, h, commu⟩ := f
+  simp at commu
+  simp
+  congr
+  apply (Yoneda.Contravariant.FullyFaithful (C := C)).right
+  rw [(Yoneda.Contravariant.FullyFaithful (C := C)).map_inv]
+  rw [commu]
+  rw [← Category.assoc]
+  rw [isic.choose_spec.1]
+  simp
+
+lemma terminal_in_category_of_elements_of_isic {L : ∫ F} (isic : Invertible L.f) : Nonempty (Terminal L) :=
+  Nonempty.intro ⟨terminal_in_category_of_elements_of_isic.morphism isic,
+    fun {X f} => terminal_in_category_of_elements_of_isic.unique isic X f⟩
 
 theorem isic_iff_terminal_in_category_of_elements
-    [decEq : ∀ X, DecidableEq (F X)] (L : CategoryOfElements F) : Nonempty (Terminal L) ↔ Invertible L.f :=
+    [decEq : ∀ X, DecidableEq (F X)] (L : ∫ F) : Nonempty (Terminal L) ↔ Invertible L.f :=
   ⟨fun ⟨ne⟩ => isic_of_terminal_in_category_of_elements ne, terminal_in_category_of_elements_of_isic⟩
 
-theorem iff_exists_terminal_in_category_of_elements {C : Type u} [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) [decEq : ∀ X, DecidableEq (F X)] : Representable.Contravariant F ↔ ∃ (L : ∫ F), Nonempty (Terminal L) := by
+theorem isic_iff_exists_terminal_in_category_of_elements {C : Type u} [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) [decEq : ∀ X, DecidableEq (F X)] : Representable F ↔ ∃ (L : ∫ F), Nonempty (Terminal L) := by
   apply Iff.intro
   . intro ⟨⟨c, α⟩⟩
     let t : ∫ F := ⟨c, (), α.morphism⟩
@@ -557,10 +556,64 @@ theorem iff_exists_terminal_in_category_of_elements {C : Type u} [Category.{u} C
     exact terminal_in_category_of_elements_of_isic (α.invertible)
   . intro ⟨L, ⟨terminal⟩⟩
     have i := isic_of_terminal_in_category_of_elements terminal
-    apply Contravariant.intro
-    apply RepresentationContra.mk L.d (Isomorphism.of_invertible i)
+    apply Representable.intro
+    apply Representation.mk L.d (Isomorphism.of_invertible i)
 
-end Representable.Contravariant
+noncomputable
+def Representation.cong
+    [decEq : ∀ X, DecidableEq (F X)] :
+    Representation F ≅ Σ' (L : ∫ F), Terminal L := by
+  let f : Representation F → (L : ∫ F) ×' Terminal L := by
+    intro r
+    let t : ∫ F := ⟨r.obj, (), r.iso.morphism⟩
+    use t
+    use terminal_in_category_of_elements_of_isic.morphism r.iso.invertible
+    intro X f
+    have := terminal_in_category_of_elements_of_isic.unique (F := F) ((show t.f = r.iso.morphism by rfl) ▸ r.iso.invertible)
+    apply this
+  let g : (L : ∫ F) ×' Terminal L → Representation F := by
+    intro ⟨L, terminal⟩
+    have i := isic_of_terminal_in_category_of_elements terminal
+    apply Representation.mk L.d (Isomorphism.of_invertible i)
+  use f, g
+  . simp [f, g]
+    simp [Category.id, Category.comp]
+    funext r
+    simp
+    rw [Representation.ext_iff]
+    simp [Isomorphism.of_invertible]
+    rw [Isomorphism.ext_iff]
+  . simp [f, g]
+    simp [Category.id, Category.comp]
+    funext ⟨L, terminal⟩
+    simp
+    apply And.intro
+    . rw [Comma.ext_iff]
+      simp
+      simp [Isomorphism.of_invertible]
+    . congr
+      unfold terminal_in_category_of_elements_of_isic.morphism
+      funext X
+      simp
+      apply terminal.unique (X := X)
+
+@[simp]
+theorem Representation.cong_map
+    [decEq : ∀ X, DecidableEq (F X)] (r : Representation F) :
+    (Representation.cong.morphism r).fst.d = r.obj := by rfl
+
+@[simp]
+theorem Representation.cong_inv
+    [decEq : ∀ X, DecidableEq (F X)] (L : Σ' (L : ∫ F), Terminal L) :
+    (Representation.cong.inverse L).obj = L.fst.d := by rfl
+
+@[simp]
+theorem Representation.cong_inv'
+    [decEq : ∀ X, DecidableEq (F X)] (L : ∫ F) (terminal : Terminal L) :
+    (Representation.cong.inverse ⟨L, terminal⟩).obj = L.d := by rfl
+
+
+end Contravariant
 
 end
 
@@ -651,3 +704,10 @@ private theorem Yoneda.Covariant.obj [Category C] {c : C} (X : C) :
     Hom[c, -] X = Hom[c, X] := by rfl
 
 end CTIC
+
+
+namespace CTIC.Contravariant
+
+
+
+end CTIC.Contravariant
