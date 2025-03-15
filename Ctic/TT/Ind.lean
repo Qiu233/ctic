@@ -3,7 +3,7 @@ import Ctic.Limit
 namespace CTIC
 
 variable {C : Type u}
-variable [Category.{u, u} C]
+variable [Category.{v, u} C]
 
 @[ext]
 structure Algebra (F : C ⥤ C) where

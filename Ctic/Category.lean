@@ -2,13 +2,15 @@ import Aesop
 import Mathlib.Logic.Equiv.Basic
 namespace CTIC
 
-class Category (V : Type u) where
-  Hom : V → V → Sort v
-  id : ∀ (x : V), Hom x x
-  comp : ∀ {x y z : V}, Hom x y → Hom y z → Hom x z
-  id_comp : ∀ {x y : V} {f : Hom x y}, comp (id x) f = f := by aesop
-  comp_id : ∀ {x y : V} {f : Hom x y}, comp f (id y) = f := by aesop
-  assoc : ∀ {w x y z : V} {f : Hom w x} {g : Hom x y} {h : Hom y z}, comp f (comp g h) = comp (comp f g) h
+class Category.{v, u} (C : Type u) : Type max u (v + 1) where
+  Hom : C → C → Sort (v + 1)
+  id : ∀ (x : C), Hom x x
+  comp : ∀ {x y z : C}, Hom x y → Hom y z → Hom x z
+  id_comp : ∀ {x y : C} {f : Hom x y}, comp (id x) f = f := by aesop
+  comp_id : ∀ {x y : C} {f : Hom x y}, comp f (id y) = f := by aesop
+  assoc : ∀ {w x y z : C} {f : Hom w x} {g : Hom x y} {h : Hom y z}, comp f (comp g h) = comp (comp f g) h
+
+abbrev SmallCategory.{u} := Category.{u, u}
 
 infix:300 " ⟶ " => Category.Hom
 prefix:320 "𝟙 " => Category.id
@@ -16,7 +18,7 @@ infixl:300 " ≫ " => Category.comp
 
 attribute [simp] Category.id_comp Category.comp_id Category.assoc
 
-instance : Category.{u + 1} (Type u) where
+instance : Category.{u} (Type u) where
   Hom x y := x → y
   id x := _root_.id
   comp f g := Function.comp g f
@@ -24,7 +26,7 @@ instance : Category.{u + 1} (Type u) where
   comp_id {x y f} := by simp [Function.comp_def]
   assoc {w x y z f g h} := by simp [Function.comp_def]
 
-variable {C : Type u} [Category.{u, v} C] {X Y : C} in
+variable {C : Type u} [Category.{v} C] {X Y : C} in
 section
 
 structure Isomorphism (X Y : C) where
@@ -163,12 +165,41 @@ instance [Category C] : HasOpposite Cᵒᵖ C where
   op := Opposite.unop
 
 @[reducible]
-instance [Category C] : HasOpposite C (Opposite C) where
-  op := Opposite.op
+instance [Category C] : HasOpposite C (Opposite C) := instHasOppositeOpOfCategory
 
 @[reducible]
-instance [Category C] : HasOpposite (Opposite C) C where
-  op := Opposite.unop
+instance [Category C] : HasOpposite (Opposite C) C := instHasOppositeOpOfCategory_1
+
+@[simp]
+private theorem reduce_op_op.«1» (X : C) : Xᵒᵖᵒᵖ = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«2» (X : C) : Xᵒᵖ.unop = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«3» (X : Cᵒᵖ) : X.unopᵒᵖ = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«3'» (X : Opposite C) : X.unopᵒᵖ = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«4» (X : Cᵒᵖ) : Xᵒᵖᵒᵖ = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«4'» (X : Opposite C) : Xᵒᵖᵒᵖ = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«5» (X : Cᵒᵖ) : X.unop = Xᵒᵖ := by rfl
+
+private theorem reduce_op_op.«5'» (X : Opposite C) : X.unop = Xᵒᵖ := by rfl
+
+@[simp]
+private theorem reduce_op_op.«6» (X : C) :
+    @HasOpposite.op _ _ instHasOppositeOpOfCategory_1 { unop := X : Cᵒᵖ } = X := by rfl
+
+@[simp]
+private theorem reduce_op_op.«7» (X : C) :
+    @HasOpposite.op _ _ instHasOppositeOppositeOfCategory_1 { unop := X : Cᵒᵖ } = X := by rfl
 
 @[reducible, simp]
 instance Category.opposite [inst : Category C] : Category Cᵒᵖ where
@@ -176,9 +207,6 @@ instance Category.opposite [inst : Category C] : Category Cᵒᵖ where
   id x := inst.id x.unop
   comp {x y z} f g := inst.comp g f
   assoc {w x y z} f g h := by simp
-
-@[simp]
-theorem Opposite.eta {x : C} : (xᵒᵖᵒᵖ) = x := rfl
 
 open Lean in
 @[app_unexpander Opposite.unop]

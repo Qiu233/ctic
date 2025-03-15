@@ -78,10 +78,10 @@ namespace Yoneda
 
 namespace Covariant
 
-abbrev t1 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) → (F x) :=
+abbrev t1 [Category.{v} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) → (F x) :=
   fun η => η.component x (𝟙 x)
 
-abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x, -] ⟹ F) := by
+abbrev t2 [Category.{v} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x, -] ⟹ F) := by
   intro Fx
   letI t (y : C) : Hom[x, y] ⟶ F y := fun f => by
     exact F.map f Fx
@@ -93,7 +93,7 @@ abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x,
   simp [t]
   simp [Category.comp]
 
-def iso [Category.{u} C] (F : C ⥤ Type u) (x : C) : (Hom[x, -] ⟹ F) ≅ (F x) where
+def iso [Category.{v} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≅ (F x) where
   morphism := t1 F x
   inverse := t2 F x
   forward := by
@@ -180,7 +180,7 @@ def natural_in_x [Category.{u} C] (F : C ⥤ Type u) : yoneda_factor_x F ≅ F w
     simp [iso, t2, t1]
     simp [Category.id]
 
-def factor_F [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
+def factor_F [Category.{v} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
   obj F := Hom[c, -] ⟹ F
   map {G H} α := by
     intro F
@@ -199,13 +199,13 @@ def factor_F [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
       have := F.naturality_expanded_set_valued f h
       rw [this]
 
-def functor_app_factor_func [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
+def functor_app_factor_func [Category.{v} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
   obj F := F.obj c
   map {G H} α := by
     intro o
     exact α.component _ o
 
-def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_factor_func c where
+def natural_in_F [Category.{v} C] (c : C) : factor_F c ≅ functor_app_factor_func c where
   morphism := by
     simp [factor_F, functor_app_factor_func]
     constructor
@@ -262,7 +262,7 @@ def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_fa
     funext η
     simp [Category.id]
 
-def Embedding {C : Type u} [Category.{u} C] : Cᵒᵖ ⥤ (C ⥤ Type u) where
+def Embedding {C : Type u} [Category.{v} C] : Cᵒᵖ ⥤ (C ⥤ Type v) where
   obj X := Hom[X.unop, -]
   map {X Y} f := by
     simp [Category.Hom]
@@ -288,7 +288,7 @@ def Embedding {C : Type u} [Category.{u} C] : Cᵒᵖ ⥤ (C ⥤ Type u) where
     funext _ _
     simp
 
-def Faithful [Category.{u} C] : (Embedding (C := C)).Faithful := by
+def Faithful [Category C] : (Embedding (C := C)).Faithful := by
   intro X Y f g h1
   simp [Embedding] at h1
   rw [NatTrans.ext_iff] at h1
@@ -302,7 +302,7 @@ def Faithful [Category.{u} C] : (Embedding (C := C)).Faithful := by
   simp at h1
   exact h1
 
-def Full [Category.{u} C] : (Embedding (C := C)).Full := by
+def Full [Category C] : (Embedding (C := C)).Full := by
   intro ⟨X⟩ ⟨Y⟩
   simp [Embedding]
   intro g
@@ -312,26 +312,25 @@ def Full [Category.{u} C] : (Embedding (C := C)).Full := by
     intro a
     rw [NatTrans.ext_iff]
     simp
-  let f1 := iso (Hom[Y, -]) X
-  let f2 := f1.morphism g
+  let f2 := t1 Hom[Y, -] X g
   use f2
-  simp [f2, f1]
+  simp [f2]
   simp [iso, t1]
   funext c h
   have := g.naturality_expanded_set_valued h (𝟙 X)
   simp [HomCov] at this
   exact this
 
-def FullyFaithful [Category.{u} C] : (Embedding (C := C)).FullyFaithful := ⟨Full, Faithful⟩
+def FullyFaithful [Category.{v, v} C] : (Embedding (C := C)).FullyFaithful := ⟨Full, Faithful⟩
 
 end Covariant
 
 namespace Contravariant
 
-abbrev t1 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (x : C) : (Hom[-, x] ⟹ F) → (F xᵒᵖ) :=
+abbrev t1 [Category.{v} C] (F : Cᵒᵖ ⥤ Type v) (x : C) : (Hom[-, x] ⟹ F) → (F xᵒᵖ) :=
   fun η => η.component xᵒᵖ (𝟙 x)
 
-abbrev t2 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (y : C) : (F yᵒᵖ) → (Hom[-, y] ⟹ F) := by
+abbrev t2 [Category.{v} C] (F : Cᵒᵖ ⥤ Type v) (y : C) : (F yᵒᵖ) → (Hom[-, y] ⟹ F) := by
   intro Fx
   letI t (x : Cᵒᵖ) : Hom[xᵒᵖ, y] ⟶ F x := fun f => by
     exact F.map f Fx
@@ -341,13 +340,12 @@ abbrev t2 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (y : C) : (F yᵒᵖ)
   simp [Category.comp]
   funext u
   simp [t]
-  simp [HasOpposite.op]
   change yᵒᵖ ⟶ X at u
   change F.map f (F.map u Fx) = F.map (u ≫ f) Fx
   rw [Functor.map_comp]
   simp [Category.comp]
 
-def iso [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) (x : C) : (Hom[-, x] ⟹ F) ≅ (F xᵒᵖ) where
+def iso [Category.{v} C] (F : Cᵒᵖ ⥤ Type v) (x : C) : (Hom[-, x] ⟹ F) ≅ (F xᵒᵖ) where
   morphism := t1 F x
   inverse := t2 F x
   forward := by
@@ -369,7 +367,7 @@ def iso [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) (x : C) : (Hom[-, x] ⟹ F) �
     change F.map (𝟙 xᵒᵖ) Y = (𝟙 F xᵒᵖ) Y
     rw [Functor.map_id]
 
-def Embedding {C : Type u} [Category.{u} C] : C ⥤ (Cᵒᵖ ⥤ Type u) where
+def Embedding {C : Type u} [Category.{v, u} C] : C ⥤ (Cᵒᵖ ⥤ Type v) where
   obj X := Hom[-, X]
   map {X Y} f := by
     simp [Category.Hom]
@@ -384,7 +382,7 @@ def Embedding {C : Type u} [Category.{u} C] : C ⥤ (Cᵒᵖ ⥤ Type u) where
     funext x
     simp [t]
 
-def Faithful [Category.{u} C] : (Embedding (C := C)).Faithful := by
+def Faithful [Category C] : (Embedding (C := C)).Faithful := by
   intro X Y f g h1
   simp [Embedding] at h1
   rw [NatTrans.ext_iff] at h1
@@ -398,7 +396,7 @@ def Faithful [Category.{u} C] : (Embedding (C := C)).Faithful := by
   simp at h1
   exact h1
 
-def Full [Category.{u} C] : (Embedding (C := C)).Full := by
+def Full [Category C] : (Embedding (C := C)).Full := by
   intro X Y
   simp [Embedding]
   intro g
@@ -408,10 +406,9 @@ def Full [Category.{u} C] : (Embedding (C := C)).Full := by
     intro a
     rw [NatTrans.ext_iff]
     simp
-  let f1 := iso (Hom[-, Y]) X
-  let f2 := f1.morphism g
+  let f2 := t1 Hom[-, Y] X g
   use f2
-  simp [f2, f1]
+  simp [f2]
   simp [iso, t1]
   funext c h
   have := g.naturality_expanded_set_valued h (𝟙 X)
@@ -477,8 +474,6 @@ lemma isic_of_terminal_in_category_of_elements
         rw [Functor.map_id]
       rw [this]
       simp [Category.id, Yoneda.Contravariant.iso, Yoneda.Contravariant.Embedding, Yoneda.Contravariant.t1, Category.comp]
-      change (α.component X) (𝟙 X ≫ f) = (α.component X) f
-      simp
     have h6 := p.commu
     change s.f = (Yoneda.Contravariant.Embedding (C := C)).map p.k ≫ α at h6
     have h7 := terminal.unique (X := s) (f := ⟨f, (), h5.symm⟩)
@@ -498,8 +493,6 @@ lemma isic_of_terminal_in_category_of_elements
         rw [Functor.map_id]
       rw [this]
       simp [Category.id, Yoneda.Contravariant.iso, Yoneda.Contravariant.Embedding, Yoneda.Contravariant.t1, Category.comp]
-      change (α.component X) (𝟙 X ≫ g) = (α.component X) g
-      simp
     have h11 := q.commu
     change t.f = (Yoneda.Contravariant.Embedding (C := C)).map q.k ≫ α at h11
     have h12 := terminal.unique (X := t) (f := ⟨g, (), h10.symm⟩)
@@ -581,5 +574,80 @@ scoped notation:max "Hom[" "-" ", " x "]" => Functor.obj Yoneda.Contravariant.Em
 
 scoped notation:max "Hom[" F "(" "-" ")" ", " Y "]" => Fᵒᵖ ⋙ Hom[-, Y]
 scoped notation:max "Hom[" X ", " F "(" "-" ")" "]" => F ⋙ Hom[X, -]
+
+section
+open Lean
+
+@[scoped app_unexpander Functor.comp]
+private def unexpand_Functor_comp_HomCon : PrettyPrinter.Unexpander
+  | `($(_) $fᵒᵖ Hom[-, $y]) => `(Hom[$f(-), $y])
+  | _ => throw ()
+
+@[scoped app_unexpander Functor.comp]
+private def unexpand_Functor_comp_HomCov : PrettyPrinter.Unexpander
+  | `($(_) $f Hom[$x, -]) => `(Hom[$x, $f(-)])
+  | _ => throw ()
+
+@[scoped app_unexpander Functor.obj]
+private def unexpand_Functor_comp_HomCon_obj : PrettyPrinter.Unexpander
+  | `($(_) Hom[$f(-), $y] $xᵒᵖ) => `(Hom[$f $x, $y])
+  | `($(_) Hom[$f(-), $y] $x) =>
+    match x with
+    | `({ unop := $x }) => `(Hom[$f $x, $y])
+    | _ => `(Hom[$f $xᵒᵖ, $y])
+  | _ => throw ()
+
+@[scoped app_unexpander Functor.obj]
+private def unexpand_Functor_HomCon_obj : PrettyPrinter.Unexpander
+  | `($(_) Hom[-, $y] $xᵒᵖ) => `(Hom[$x, $y])
+  | `($(_) Hom[-, $y] $x) =>
+    match x with
+    | `({ unop := $x }) => `(Hom[$x, $y])
+    | _ => `(Hom[$xᵒᵖ, $y])
+  | _ => throw ()
+
+@[scoped app_unexpander Functor.obj]
+private def unexpand_Functor_comp_HomCov_obj : PrettyPrinter.Unexpander
+  | `($(_) Hom[$x, $f(-)] $y) => `(Hom[$x, $f $y])
+  | _ => throw ()
+
+@[scoped app_unexpander Functor.obj]
+private def unexpand_Functor_HomCov_obj : PrettyPrinter.Unexpander
+  | `($(_) Hom[$x, -] $y) => `(Hom[$x, $y])
+  | _ => throw ()
+
+end
+
+@[simp]
+private theorem Yoneda.Contravariant.comp_obj_def [Category C] [Category D] {F : C ⥤ D} {X : C} {Y : D} :
+    Hom[F(-), Y] { unop := X } = Hom[F X, Y] := by rfl
+
+@[simp]
+private theorem Yoneda.Contravariant.comp_obj_def' [Category C] [Category D] {F : C ⥤ D} {X : C} {Y : D} :
+    Hom[F(-), Y] Xᵒᵖ = Hom[F X, Y] := by rfl
+
+@[simp]
+private theorem Yoneda.Contravariant.map_raw [Category C] {c : C} {X Y : C} {f : X ⟶ Y} {g : Y ⟶ c} :
+    (Hom[-, c].map f) g = f ≫ g := by rfl
+
+@[simp]
+private theorem Yoneda.Contravariant.map [Category C] {c : Cᵒᵖ} {X Y : Cᵒᵖ} {f : X ⟶ Y} {g : Y ⟶ c} :
+    (Hom[-, c].map f) g = f ≫ g := by rfl
+
+@[simp]
+private theorem Yoneda.Contravariant.obj [Category C] {c : C} (X : C) :
+    Hom[-, c] Xᵒᵖ = Hom[X, c] := by rfl
+
+@[simp]
+private theorem Yoneda.Covariant.comp_obj_def [Category C] [Category D] {F : C ⥤ D} {X : D} {Y : C} :
+    Hom[X, F(-)] Y = Hom[X, F Y] := by rfl
+
+@[simp]
+private theorem Yoneda.Covariant.map [Category C] {c : C} {X Y : C} {f : X ⟶ Y} {g : c ⟶ X} :
+    (Hom[c, -].map f) g = g ≫ f := by rfl
+
+@[simp]
+private theorem Yoneda.Covariant.obj [Category C] {c : C} (X : C) :
+    Hom[c, -] X = Hom[c, X] := by rfl
 
 end CTIC

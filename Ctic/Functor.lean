@@ -2,7 +2,7 @@ import Ctic.Category
 namespace CTIC
 
 @[ext]
-structure Functor (C : Type u) (D : Type v) [Category.{u, a} C] [Category.{v, b} D] : Type max u v a b where
+structure Functor (C : Type u) (D : Type v) [Category.{a} C] [Category.{b} D] : Type max u v a b where
   obj : C → D
   map {X Y : C} : X ⟶ Y → obj X ⟶ obj Y
   map_id {X : C} : map (𝟙 X) = 𝟙 (obj X) := by aesop
@@ -11,6 +11,9 @@ structure Functor (C : Type u) (D : Type v) [Category.{u, a} C] [Category.{v, b}
 attribute [simp] Functor.map_id Functor.map_comp
 
 infixr:300 " ⥤ " => Functor
+
+instance [Category C] [Category D] : CoeFun (C ⥤ D) (fun _ => C → D) where
+  coe f := f.obj
 
 def Functor.id (C : Type u) [Category C] : C ⥤ C where
   obj X := X
@@ -65,8 +68,24 @@ def Functor.opposite [Category C] [Category D] (F : C ⥤ D) : Cᵒᵖ ⥤ Dᵒ�
 instance [Category C] [Category D] : HasOpposite (C ⥤ D) (Cᵒᵖ ⥤ Dᵒᵖ) where
   op F := F.opposite
 
-instance Category.product (C : Type u) (D : Type v) [Category.{u, a} C] [Category.{v, b} D] : Category.{max u v, max 1 a b} (C × D) where
-  Hom X Y := PProd.{a, b} (X.fst ⟶ Y.fst) (X.snd ⟶ Y.snd)
+@[simp]
+private theorem reduce_functor_op.«1» [Category C] [Category D] (F : C ⥤ D) (X : C) :
+    (Fᵒᵖ Xᵒᵖ)ᵒᵖ = F X := rfl
+
+@[simp]
+private theorem reduce_functor_op.«2» [Category C] [Category D] (F : C ⥤ D) (X : C) :
+    (Fᵒᵖ (Opposite.op X))ᵒᵖ = F X := rfl
+
+@[simp]
+private theorem reduce_functor_op.«3» [Category C] [Category D] (F : C ⥤ D) (X : Cᵒᵖ) :
+    (Fᵒᵖ X)ᵒᵖ = F Xᵒᵖ := rfl
+
+@[simp]
+private theorem reduce_functor_op.«3'» [Category C] [Category D] (F : C ⥤ D) (X : Opposite C) :
+    (Fᵒᵖ X)ᵒᵖ = F Xᵒᵖ := rfl
+
+instance Category.product (C : Type u) (D : Type v) [Category C] [Category D] : Category (C × D) where
+  Hom X Y := PProd (X.fst ⟶ Y.fst) (X.snd ⟶ Y.snd)
   id X := ⟨𝟙 X.fst, 𝟙 X.snd⟩
   comp {X Y Z} := fun ⟨fc, fd⟩ ⟨gc, gd⟩ => ⟨fc ≫ gc, fd ≫ gd⟩
   assoc {W X Y Z} := by simp [Category.assoc]
@@ -79,7 +98,7 @@ f |       |F f     | G f
   Y ---> F Y ---> G Y
 -/
 @[ext]
-structure NatTrans {C : Type u} {D : Type v} [Category C] [Category D] (F G : C ⥤ D) where
+structure NatTrans {C : Type u} {D : Type v} [Category.{p} C] [Category.{q} D] (F G : C ⥤ D) where
   component : ∀ X : C, F.obj X ⟶ G.obj X
   naturality : ∀ {X Y : C}, ∀ f : X ⟶ Y, component X ≫ G.map f = F.map f ≫ component Y
 
@@ -175,9 +194,6 @@ private lemma Functor.const.eta [Category C] [Category D] {X : D} {Y : C} : (Fun
 
 @[simp]
 private lemma Functor.const.map [Category C] [Category D] {d : D} {X Y : C} {f : X ⟶ Y} : (Functor.const.obj d).map f = 𝟙 d := by simp [constFunctor, Functor.const]
-
-instance [Category C] [Category D] : CoeFun (C ⥤ D) (fun _ => C → D) where
-  coe f := f.obj
 
 open Lean in
 @[app_unexpander Functor.obj]

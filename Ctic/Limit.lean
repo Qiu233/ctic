@@ -6,11 +6,11 @@ namespace CTIC
 -- variable {C : Type u} {D : Type v} [Category C] [Category D]
 
 
-structure Cone {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, v2} C] (F : J ⥤ C) : Type max u1 u2 v1 v2 where
+structure Cone {J C : Type*} [Category J] [Category C] (F : J ⥤ C) where
   N : C
   π' : (constFunctor N) ⟶ F
 
-structure ConeHom {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, v2} C] {F : J ⥤ C} (X Y : Cone F) where
+structure ConeHom {J C : Type*} [Category J] [Category C] {F : J ⥤ C} (X Y : Cone F) where
   u : X.N ⟶ Y.N
   universal : ∀ j : J, u ≫ (Y.π'.component j) = (X.π'.component j)
 
@@ -39,15 +39,15 @@ theorem Terminal.self [Category C] {X : C} {t : Terminal X} : t.morphism X = �
   have := t.unique (f := 𝟙 X)
   simp [this]
 
-class Limit {J : Type u1} {C : Type u2} [Category.{u1, v1} J] [Category.{u2, v2} C] (F : J ⥤ C) : Type max u1 u2 v1 v2 where
+class Limit {J : Type u1} {C : Type u2} [Category J] [Category C] (F : J ⥤ C) where
   L : Cone F
   final : Terminal L
 
-def IsLimitOf [Category.{u1, v1} J] [Category.{u2, v2} C] (L : C) (F : J ⥤ C) := ∃ limit : Limit F, limit.L.N = L
+def IsLimitOf [Category J] [Category C] (L : C) (F : J ⥤ C) := ∃ limit : Limit F, limit.L.N = L
 
 -- C(c, -)
 @[reducible]
-def HomCov [Category.{u, v + 1} C] (c : Cᵒᵖ) : C ⥤ Type v where
+def HomCov [Category.{v, u} C] (c : Cᵒᵖ) : C ⥤ Type v where
   obj X := cᵒᵖ ⟶ X
   map {X Y} f i := i ≫ f
   map_id := by
@@ -61,7 +61,7 @@ def HomCov [Category.{u, v + 1} C] (c : Cᵒᵖ) : C ⥤ Type v where
 
 -- C(-, c)
 @[reducible]
-def HomCon [Category.{u, v + 1} C] (c : C) : Cᵒᵖ ⥤ Type v where
+def HomCon [Category.{v, u} C] (c : C) : Cᵒᵖ ⥤ Type v where
   obj X := X.unop ⟶ c
   map {X Y} f i := f ≫ i
   map_id := by
@@ -209,16 +209,16 @@ def Discrete (α : Type u) := α
 instance [DecidableEq α] : DecidableEq (Discrete α) := inferInstance
 
 instance : Category (Discrete α) where
-  Hom X Y := X = Y
-  id X := by simp
-  comp f g := by simp [f, g]
+  Hom X Y := PLift (X = Y)
+  id X := ⟨by simp⟩
+  comp f g := ⟨Eq.trans f.down g.down⟩
   assoc := by simp
 
 inductive Discrete.Binary : Type u where
   | X | Y
 deriving BEq
 
-notation:max " 𝟐 " => Discrete Discrete.Binary
+notation:max "𝟐" => Discrete Discrete.Binary
 
 @[simp]
 private abbrev BinProd.obj [Category C] (X Y : C) : 𝟐 → C := fun x =>
@@ -229,20 +229,22 @@ private abbrev BinProd.obj [Category C] (X Y : C) : 𝟐 → C := fun x =>
 @[simp]
 private abbrev BinProd.map [Category C] (X Y : C) {A B : 𝟐} : (A ⟶ B) → (BinProd.obj X Y A ⟶ BinProd.obj X Y B) := fun f => by
   simp [BinProd.obj]
-  rw [f]
+  rw [f.down]
   cases B with
   | X => exact 𝟙 X
   | Y => exact 𝟙 Y
 
 @[reducible]
-def BinProd.functor [Category C] (X Y : C) : 𝟐 ⥤ C where
+def BinProd.functor [inst : Category C] (X Y : C) : 𝟐 ⥤ C where
   obj := BinProd.obj X Y
   map := BinProd.map X Y
   map_id {A} := by cases A <;> simp
   map_comp {A B C} f g := by
-    cases A <;> (cases B <;> (cases C <;> simp [f, g]))
-    . trivial
-    . trivial
+    cases A <;> (cases B <;> (cases C <;> simp [f.down, g.down]))
+    . simp [Category.Hom] at f
+      apply False.elim f.down
+    . simp [Category.Hom] at f
+      apply False.elim f.down
 
 @[reducible]
 def BinProd [Category C] (X Y : C) := Limit (BinProd.functor X Y)
@@ -263,7 +265,7 @@ def BinProd [Category C] (X Y : C) := Limit (BinProd.functor X Y)
 -- #check Comma ()
 -- #check HomCov
 
-def Hom {C : Type u} [Category.{u, v + 1} C] : (Cᵒᵖ × C) ⥤ Type v where
+def Hom {C : Type u} [Category.{v} C] : (Cᵒᵖ × C) ⥤ Type v where
   obj := fun (X, Y) => X.unop ⟶ Y
   map {X Y} := fun ⟨f, h⟩ g => f ≫ g ≫ h
   map_id {X} := by
