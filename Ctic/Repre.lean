@@ -75,6 +75,8 @@ theorem NatTrans.naturality_expanded_set_valued
 
 namespace Yoneda
 
+namespace Covariant
+
 abbrev t1 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) → (F x) :=
   fun η => η.component x (𝟙 x)
 
@@ -89,47 +91,6 @@ abbrev t2 [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (F x) → (Hom[x,
   funext u
   simp [t]
   simp [Category.comp]
-
-abbrev t3 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (x : C) : (Hom[-, x] ⟹ F) → (F xᵒᵖ) :=
-  fun η => η.component xᵒᵖ (𝟙 x)
-
-abbrev t4 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (y : C) : (F yᵒᵖ) → (Hom[-, y] ⟹ F) := by
-  intro Fx
-  letI t (x : Cᵒᵖ) : Hom[xᵒᵖ, y] ⟶ F x := fun f => by
-    exact F.map f Fx
-  use t
-  intro X Y f
-  simp [t]
-  simp [Category.comp]
-  funext u
-  simp [t]
-  simp [HasOpposite.op]
-  change yᵒᵖ ⟶ X at u
-  change F.map f (F.map u Fx) = F.map (u ≫ f) Fx
-  rw [Functor.map_comp]
-  simp [Category.comp]
-
--- def equiv [Category.{u, v + 1} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≃ (F x) where
---   toFun := t1 F x
---   invFun := t2 F x
---   right_inv := by
---     intro Y
---     simp [t1, t2]
---     simp [Category.id]
---   left_inv := by
---     intro α
---     simp [t2, t1]
---     ext v
---     congr
---     ext y f
---     clear v
---     simp [HomCov] at f
---     have := α.naturality (X := x) (Y := y) f
---     simp [Category.comp] at this
---     simp [HomCov] at this
---     have := funext_iff.mp this (𝟙 x)
---     simp at this
---     rw [this]
 
 def iso [Category.{u} C] (F : C ⥤ Type u) (x : C) : (Hom[x, -] ⟹ F) ≅ (F x) where
   morphism := t1 F x
@@ -150,28 +111,6 @@ def iso [Category.{u} C] (F : C ⥤ Type u) (x : C) : (Hom[x, -] ⟹ F) ≅ (F x
     simp [Category.comp]
     funext Y
     simp [t1, t2]
-
-def iso' [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) (x : C) : (Hom[-, x] ⟹ F) ≅ (F xᵒᵖ) where
-  morphism := t3 F x
-  inverse := t4 F x
-  forward := by
-    simp [Category.comp]
-    funext α
-    simp [t4, t3]
-    ext v
-    congr
-    ext y f
-    clear v
-    simp [HomCov] at f
-    have := α.naturality_expanded_set_valued f (𝟙 x)
-    simp [HomCov] at this
-    exact this
-  backward := by
-    simp [Category.comp]
-    funext Y
-    simp [t4, t3]
-    change F.map (𝟙 xᵒᵖ) Y = (𝟙 F xᵒᵖ) Y
-    rw [Functor.map_id]
 
 def yoneda_factor_x [Category.{u} C] (F : C ⥤ Type u) : C ⥤ Type u where
   obj x := Hom[x, -] ⟹ F
@@ -203,29 +142,29 @@ def yoneda_factor_x [Category.{u} C] (F : C ⥤ Type u) : C ⥤ Type u where
 
 def natural_in_x [Category.{u} C] (F : C ⥤ Type u) : yoneda_factor_x F ≅ F where
   morphism := by
-    use fun x => (Yoneda.iso F x).morphism
+    use fun x => (iso F x).morphism
     intro X Y f
     simp [Category.comp]
     funext t
     simp
-    simp [Yoneda.iso, t1, yoneda_factor_x]
+    simp [iso, t1, yoneda_factor_x]
     have := t.naturality_expanded_set_valued f
     simp [HomCov, Category.comp] at this
     simp [this]
   inverse := by
-    use fun x => (Yoneda.iso F x).inverse
+    use fun x => (iso F x).inverse
     intro X Y f
     simp [Category.comp]
     funext t
     simp
-    simp [Yoneda.iso, t1, yoneda_factor_x]
+    simp [iso, t1, yoneda_factor_x]
     simp [Category.comp]
   forward := by
     simp [Category.id, NatTrans.id]
     simp [Category.comp, NatTrans.comp]
     congr
     funext X t
-    simp [Yoneda.iso, t2, t1]
+    simp [iso, t2, t1]
     congr
     funext c f
     have := t.naturality_expanded_set_valued f
@@ -237,7 +176,7 @@ def natural_in_x [Category.{u} C] (F : C ⥤ Type u) : yoneda_factor_x F ≅ F w
     congr
     funext X FX
     simp
-    simp [Yoneda.iso, t2, t1]
+    simp [iso, t2, t1]
     simp [Category.id]
 
 def factor_F [Category.{v, v + 1} C] (c : C) : (C ⥤ Type v) ⥤ Type v where
@@ -322,7 +261,7 @@ def natural_in_F [Category.{v, v + 1} C] (c : C) : factor_F c ≅ functor_app_fa
     funext η
     simp [Category.id]
 
-def CovEmbedding (C : Type u) [Category.{u} C] : Cᵒᵖ ⥤ (C ⥤ Type u) where
+def Embedding (C : Type u) [Category.{u} C] : Cᵒᵖ ⥤ (C ⥤ Type u) where
   obj X := Hom[X.unop, -]
   map {X Y} f := by
     simp [Category.Hom]
@@ -348,7 +287,88 @@ def CovEmbedding (C : Type u) [Category.{u} C] : Cᵒᵖ ⥤ (C ⥤ Type u) wher
     funext _ _
     simp
 
-def ContraEmbedding (C : Type u) [Category.{u} C] : C ⥤ (Cᵒᵖ ⥤ Type u) where
+def Faithful [Category.{u} C] : (Embedding C).Faithful := by
+  intro X Y f g h1
+  simp [Embedding] at h1
+  rw [NatTrans.ext_iff] at h1
+  simp at h1
+  rw [funext_iff] at h1
+  conv at h1 =>
+    intro x
+    rw [funext_iff]
+    intro h
+  specialize h1 (X.unop) (𝟙 X.unop)
+  simp at h1
+  exact h1
+
+def Full [Category.{u} C] : (Embedding C).Full := by
+  intro ⟨X⟩ ⟨Y⟩
+  simp [Embedding]
+  intro g
+  simp [Category.Hom]
+  conv =>
+    rhs
+    intro a
+    rw [NatTrans.ext_iff]
+    simp
+  let f1 := iso (Hom[Y, -]) X
+  let f2 := f1.morphism g
+  use f2
+  simp [f2, f1]
+  simp [iso, t1]
+  funext c h
+  have := g.naturality_expanded_set_valued h (𝟙 X)
+  simp [HomCov] at this
+  exact this
+
+def FullyFaithful [Category.{u} C] : (Embedding C).FullyFaithful := ⟨Full, Faithful⟩
+
+end Covariant
+
+namespace Contravariant
+
+abbrev t1 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (x : C) : (Hom[-, x] ⟹ F) → (F xᵒᵖ) :=
+  fun η => η.component xᵒᵖ (𝟙 x)
+
+abbrev t2 [Category.{u, v + 1} C] (F : Cᵒᵖ ⥤ Type v) (y : C) : (F yᵒᵖ) → (Hom[-, y] ⟹ F) := by
+  intro Fx
+  letI t (x : Cᵒᵖ) : Hom[xᵒᵖ, y] ⟶ F x := fun f => by
+    exact F.map f Fx
+  use t
+  intro X Y f
+  simp [t]
+  simp [Category.comp]
+  funext u
+  simp [t]
+  simp [HasOpposite.op]
+  change yᵒᵖ ⟶ X at u
+  change F.map f (F.map u Fx) = F.map (u ≫ f) Fx
+  rw [Functor.map_comp]
+  simp [Category.comp]
+
+def iso [Category.{u} C] (F : Cᵒᵖ ⥤ Type u) (x : C) : (Hom[-, x] ⟹ F) ≅ (F xᵒᵖ) where
+  morphism := t1 F x
+  inverse := t2 F x
+  forward := by
+    simp [Category.comp]
+    funext α
+    simp [t1, t2]
+    ext v
+    congr
+    ext y f
+    clear v
+    simp [HomCov] at f
+    have := α.naturality_expanded_set_valued f (𝟙 x)
+    simp [HomCov] at this
+    exact this
+  backward := by
+    simp [Category.comp]
+    funext Y
+    simp [t1, t2]
+    change F.map (𝟙 xᵒᵖ) Y = (𝟙 F xᵒᵖ) Y
+    rw [Functor.map_id]
+
+def Embedding (C : Type u) [Category.{u} C] : C ⥤ (Cᵒᵖ ⥤ Type u) where
   obj X := Hom[-, X]
   map {X Y} f := by
     simp [Category.Hom]
@@ -363,9 +383,9 @@ def ContraEmbedding (C : Type u) [Category.{u} C] : C ⥤ (Cᵒᵖ ⥤ Type u) w
     funext x
     simp [t]
 
-def Faithful [Category.{u} C] : (Yoneda.CovEmbedding C).Faithful := by
+def Faithful [Category.{u} C] : (Embedding C).Faithful := by
   intro X Y f g h1
-  simp [Yoneda.CovEmbedding] at h1
+  simp [Embedding] at h1
   rw [NatTrans.ext_iff] at h1
   simp at h1
   rw [funext_iff] at h1
@@ -373,13 +393,13 @@ def Faithful [Category.{u} C] : (Yoneda.CovEmbedding C).Faithful := by
     intro x
     rw [funext_iff]
     intro h
-  specialize h1 (X.unop) (𝟙 X.unop)
+  specialize h1 (Xᵒᵖ) (𝟙 Xᵒᵖ)
   simp at h1
   exact h1
 
-def Full [Category.{u} C] : (Yoneda.CovEmbedding C).Full := by
-  intro ⟨X⟩ ⟨Y⟩
-  simp [Yoneda.CovEmbedding]
+def Full [Category.{u} C] : (Embedding C).Full := by
+  intro X Y
+  simp [Embedding]
   intro g
   simp [Category.Hom]
   conv =>
@@ -387,17 +407,19 @@ def Full [Category.{u} C] : (Yoneda.CovEmbedding C).Full := by
     intro a
     rw [NatTrans.ext_iff]
     simp
-  let f1 := Yoneda.iso (Hom[Y, -]) X
+  let f1 := iso (Hom[-, Y]) X
   let f2 := f1.morphism g
   use f2
   simp [f2, f1]
-  simp [Yoneda.iso, t1]
+  simp [iso, t1]
   funext c h
   have := g.naturality_expanded_set_valued h (𝟙 X)
   simp [HomCov] at this
   exact this
 
-def FullyFaithful [Category.{u} C] : (Yoneda.CovEmbedding C).FullyFaithful := ⟨Yoneda.Full, Yoneda.Faithful⟩
+def FullyFaithful [Category.{u} C] : (Embedding C).FullyFaithful := ⟨Full, Faithful⟩
+
+end Contravariant
 
 end Yoneda
 
@@ -419,10 +441,12 @@ variable {C : Type u}
 variable [Category.{u} C]
 variable {F : Cᵒᵖ ⥤ Type u}
 
-abbrev CategoryOfElements (F : Cᵒᵖ ⥤ Type u) :=  Comma (Yoneda.ContraEmbedding C) (TrivialFunctor F)
+abbrev CategoryOfElements (F : Cᵒᵖ ⥤ Type u) :=  Comma (Yoneda.Contravariant.Embedding C) (TrivialFunctor F)
 
-open Classical in
-lemma Yoneda.isic_of_terminal_in_category_of_elements (L : CategoryOfElements F) (terminal : Terminal L) : Invertible L.f := by
+prefix:max "∫ " => CategoryOfElements
+
+lemma Yoneda.isic_of_terminal_in_category_of_elements
+    [decEq : ∀ X, DecidableEq (F X)] {L : CategoryOfElements F} (terminal : Terminal L) : Invertible L.f := by
   obtain ⟨c, u, α⟩ := L
   change Hom[-, c] ⟶ F at α
   apply NatTrans.isic_of_components_isic
@@ -432,51 +456,51 @@ lemma Yoneda.isic_of_terminal_in_category_of_elements (L : CategoryOfElements F)
   . rw [Function.Monic_iff_Injective]
     intro f g h1
     change Xᵒᵖ ⟶ c at f g
-    let s : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.iso' F Xᵒᵖ |>.inverse ((α.component X) f)⟩
-    let t : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.iso' F Xᵒᵖ |>.inverse ((α.component X) g)⟩
+    let s : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse ((α.component X) f)⟩
+    let t : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse ((α.component X) g)⟩
     let p := terminal.morphism s
     let q := terminal.morphism t
     have h2 : s = t := by simp [s, t]; rw [h1]
     have h3 : p.k = q.k := by
       simp [p, q]
       congr
-    have h5 : ((Yoneda.ContraEmbedding C).map f ≫ α) = (Yoneda.iso' F Xᵒᵖ).inverse (α.component X f) := by
-      have := (Yoneda.iso' F Xᵒᵖ).monic
+    have h5 : ((Yoneda.Contravariant.Embedding C).map f ≫ α) = (Yoneda.Contravariant.iso F Xᵒᵖ).inverse (α.component X f) := by
+      have := (Yoneda.Contravariant.iso F Xᵒᵖ).monic
       rw [Function.Monic_iff_Injective] at this
       apply this
-      rw [← Function.comp_apply (f := (Yoneda.iso' F Xᵒᵖ).morphism)]
-      rw [← Function.comp_apply (f := (Yoneda.iso' F Xᵒᵖ).morphism)]
-      have : (Yoneda.iso' F Xᵒᵖ).morphism ∘ (Yoneda.iso' F Xᵒᵖ).inverse = 𝟙 (F X) := by
+      rw [← Function.comp_apply (f := (Yoneda.Contravariant.iso F Xᵒᵖ).morphism)]
+      rw [← Function.comp_apply (f := (Yoneda.Contravariant.iso F Xᵒᵖ).morphism)]
+      have : (Yoneda.Contravariant.iso F Xᵒᵖ).morphism ∘ (Yoneda.Contravariant.iso F Xᵒᵖ).inverse = 𝟙 (F X) := by
         funext t
         change F.map (𝟙 X) t = (𝟙 F X) t
         rw [Functor.map_id]
       rw [this]
-      simp [Category.id, Yoneda.iso', Yoneda.ContraEmbedding, Yoneda.t3, Category.comp]
+      simp [Category.id, Yoneda.Contravariant.iso, Yoneda.Contravariant.Embedding, Yoneda.Contravariant.t1, Category.comp]
       change (α.component X) (𝟙 X ≫ f) = (α.component X) f
       simp
     have h6 := p.commu
-    change s.f = (Yoneda.ContraEmbedding C).map p.k ≫ α at h6
+    change s.f = (Yoneda.Contravariant.Embedding C).map p.k ≫ α at h6
     have h7 := terminal.unique (X := s) (f := ⟨f, (), h5.symm⟩)
     have h8 : f = p.k := by
       rw [CommaHom.ext_iff] at h7
       simp at h7
       simp [h7]
-    have h10 : ((Yoneda.ContraEmbedding C).map g ≫ α) = (Yoneda.iso' F Xᵒᵖ).inverse (α.component X g) := by
-      have := (Yoneda.iso' F Xᵒᵖ).monic
+    have h10 : ((Yoneda.Contravariant.Embedding C).map g ≫ α) = (Yoneda.Contravariant.iso F Xᵒᵖ).inverse (α.component X g) := by
+      have := (Yoneda.Contravariant.iso F Xᵒᵖ).monic
       rw [Function.Monic_iff_Injective] at this
       apply this
-      rw [← Function.comp_apply (f := (Yoneda.iso' F Xᵒᵖ).morphism)]
-      rw [← Function.comp_apply (f := (Yoneda.iso' F Xᵒᵖ).morphism)]
-      have : (Yoneda.iso' F Xᵒᵖ).morphism ∘ (Yoneda.iso' F Xᵒᵖ).inverse = 𝟙 (F X) := by
+      rw [← Function.comp_apply (f := (Yoneda.Contravariant.iso F Xᵒᵖ).morphism)]
+      rw [← Function.comp_apply (f := (Yoneda.Contravariant.iso F Xᵒᵖ).morphism)]
+      have : (Yoneda.Contravariant.iso F Xᵒᵖ).morphism ∘ (Yoneda.Contravariant.iso F Xᵒᵖ).inverse = 𝟙 (F X) := by
         funext t
         change F.map (𝟙 X) t = (𝟙 F X) t
         rw [Functor.map_id]
       rw [this]
-      simp [Category.id, Yoneda.iso', Yoneda.ContraEmbedding, Yoneda.t3, Category.comp]
+      simp [Category.id, Yoneda.Contravariant.iso, Yoneda.Contravariant.Embedding, Yoneda.Contravariant.t1, Category.comp]
       change (α.component X) (𝟙 X ≫ g) = (α.component X) g
       simp
     have h11 := q.commu
-    change t.f = (Yoneda.ContraEmbedding C).map q.k ≫ α at h11
+    change t.f = (Yoneda.Contravariant.Embedding C).map q.k ≫ α at h11
     have h12 := terminal.unique (X := t) (f := ⟨g, (), h10.symm⟩)
     have h13 : g = q.k := by
       rw [CommaHom.ext_iff] at h12
@@ -487,18 +511,46 @@ lemma Yoneda.isic_of_terminal_in_category_of_elements (L : CategoryOfElements F)
   . rw [Function.Epic_iff_Surjective]
     intro e
     change F X at e
-    let s : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.iso' F Xᵒᵖ |>.inverse e⟩
+    let s : CategoryOfElements F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.iso F Xᵒᵖ |>.inverse e⟩
     have h1 : s.f.component X (𝟙 X) = e := by
-      simp [s, Yoneda.iso']
+      simp [s, Yoneda.Contravariant.iso]
       change (F.map (𝟙 X)) e = e
       rw [Functor.map_id (X := X)]
       simp [Category.id]
     let t := terminal.morphism s
     have h2 := t.commu
-    change s.f = (Yoneda.ContraEmbedding C).map t.k ≫ α at h2
+    change s.f = (Yoneda.Contravariant.Embedding C).map t.k ≫ α at h2
     have h3 : (α.component X) t.k = s.f.component X (𝟙 X) := by
       rw [h2]
-      simp [Yoneda.ContraEmbedding]
+      simp [Yoneda.Contravariant.Embedding]
       simp [Category.comp]
     have h4 := Eq.trans h3 h1
     use t.k
+
+theorem Yoneda.terminal_in_category_of_elements_of_isic {L : CategoryOfElements F} (isic : Invertible L.f) : Nonempty (Terminal L) := by
+  refine Nonempty.intro ⟨?morphism, ?unique⟩
+  case morphism =>
+    intro X
+    let t : Hom[-, X.d] ⟶ Hom[-, L.d] := X.f ≫ isic.choose
+    use (Yoneda.Contravariant.FullyFaithful (C := C)).inv t, ()
+    simp [t]
+    have := isic.choose_spec
+    rw [← Category.assoc]
+    rw [this.2]
+    simp
+  case unique =>
+    intro X f
+    obtain ⟨k, h, commu⟩ := f
+    simp at commu
+    simp
+    congr
+    apply (Yoneda.Contravariant.FullyFaithful (C := C)).right
+    rw [(Yoneda.Contravariant.FullyFaithful (C := C)).map_inv]
+    rw [commu]
+    rw [← Category.assoc]
+    rw [isic.choose_spec.1]
+    simp
+
+theorem Yoneda.isic_iff_terminal_in_category_of_elements
+    [∀ X, DecidableEq (F X)] (L : CategoryOfElements F) : Nonempty (Terminal L) ↔ Invertible L.f :=
+  ⟨fun ⟨ne⟩ => Yoneda.isic_of_terminal_in_category_of_elements ne, Yoneda.terminal_in_category_of_elements_of_isic⟩

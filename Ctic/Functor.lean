@@ -236,6 +236,27 @@ def Functor.EssentiallySurjective {C D : Type*} [Category C] [Category D] (F : C
 def Functor.EssentiallyInjective {C D : Type*} [Category C] [Category D] (F : C ⥤ D) := ∀ X Y : C, F.obj X ≅ F.obj Y → X ≅ Y
 abbrev Functor.FullyFaithful {C D : Type*} [Category C] [Category D] (F : C ⥤ D) : Prop := F.Full ∧ F.Faithful
 
+theorem Functor.FullyFaithful.bijective {C D : Type*} [Category C] [Category D] {F : C ⥤ D} (ff : Functor.FullyFaithful F) :
+    ∀ ⦃X Y : C⦄, Function.Bijective (F.map (X := X) (Y := Y)) := fun X Y => ⟨ff.right (X := X) (Y := Y), ff.left (X := X) (Y := Y)⟩
+
+noncomputable def Functor.FullyFaithful.inv
+    {C D : Type*} [Category C] [Category D]
+    {F : C ⥤ D} (ff : FullyFaithful F) {X Y : C} (f : F X ⟶ F Y) : X ⟶ Y := ff.left f |>.choose
+
+@[simp]
+theorem Functor.FullyFaithful.map_inv
+    {C D : Type*} [Category C] [Category D]
+    {F : C ⥤ D} (ff : FullyFaithful F) {X Y : C} (f : F X ⟶ F Y) : F.map (ff.inv f) = f := ff.left f |>.choose_spec
+
+theorem Functor.FullyFaithful.inv_unique
+    {C D : Type*} [Category C] [Category D]
+    {F : C ⥤ D} (ff : FullyFaithful F) {X Y : C} (f : F X ⟶ F Y) : ∀ (r : X ⟶ Y), F.map r = f → r = ff.inv f := by
+  intro r h
+  simp [inv]
+  have := ff.right (X := X) (Y := Y) (a₁ := r) (a₂ := ff.inv f)
+  rw [ff.map_inv f] at this
+  exact this h
+
 variable [Category C] {a a' b b' : C} {f : a ⟶ b} {α : a ≅ a'} {β : b ≅ b'} in
 section
 

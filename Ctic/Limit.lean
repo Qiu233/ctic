@@ -89,6 +89,27 @@ def TrivialFunctor [Category C] (c : C) : Unit ⥤ C where
   obj _ := c
   map _ := 𝟙 c
 
+@[simp]
+private theorem TrivialFunctor.app [Category C] (c : C) (u : Unit) : (TrivialFunctor c) u = c := by rfl
+
+@[simp]
+private theorem TrivialFunctor.map [Category C] (c : C) {X Y : Unit} (f : X ⟶ Y) : (TrivialFunctor c).map f = 𝟙 c := by rfl
+
+open Lean PrettyPrinter Delaborator SubExpr Meta in
+section
+
+@[delab app.CTIC.Functor.obj]
+def delab_TrivialFunctor_obj : Delab := do
+  let e ← getExpr
+  guard <| e.getAppNumArgs == 6
+  withNaryArg 4 do
+    let e ← getExpr
+    guard <| e.isAppOf ``TrivialFunctor
+    guard <| e.getAppNumArgs == 3
+    withNaryArg 2 delab
+
+end
+
 -- def TrivialFunctor.target [Category C] (f : ) :=
 
 -- abbrev T [Category J] [Category C] (F : J ⥤ C) := Comma Functor.const (TrivialFunctor F)
@@ -127,8 +148,6 @@ private def aux_1 [Category C] [Category D] (F : C ⥤ D) : Comma Functor.const 
         simp
         have := f.commu
         simp at this
-        have aux1 : 𝟙 F = 𝟙 ((constFunctor F).obj X.e) := by simp [constFunctor, Functor.const]
-        rw [Category.comp_id (y := F)] at this
         rw [this]
         simp [Category.comp]
         congr⟩
@@ -138,7 +157,6 @@ private def aux_2 [Category C] [Category D] (F : C ⥤ D) : Cone F ⥤ Comma Fun
     let obj : Cone F → Comma Functor.const (TrivialFunctor F) := fun x => Comma.mk x.N () x.π'
     let map {X Y : Cone F} : X ⟶ Y → obj X ⟶ obj Y := fun f => ⟨f.u, 𝟙 (), by
       simp [obj]
-      rw [Category.comp_id (f := X.π')]
       rw [NatTrans.ext_iff]
       funext t
       simp [Functor.const, Category.comp, NatTrans.comp]
