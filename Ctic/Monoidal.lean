@@ -112,7 +112,7 @@ example {F G : (C × D) ⥤ E} (η : ∀ (c : C) (d : D), F (c, d) ⟶ G (c, d))
 
 end Functor
 
-class TensorCategory.{u, v} (C : Type u) extends Category.{u, v} C : Type (max 1 u v) where
+class TensorCategory.{v, u} (C : Type u) extends Category.{v, u} C where
   tensor : (C × C) ⥤ C
 
 notation:310 lhs:310 " ⊗ " rhs:311 => Functor.obj TensorCategory.tensor (lhs, rhs)
@@ -121,7 +121,7 @@ notation:310 lhs:310 " ⨂ " rhs:311 => Functor.map TensorCategory.tensor ⟨lhs
 -- notation:max "[" X " ⊗ " "-" "]" => TensorCategory.tensor.factor_right X
 -- notation:max "[" "-" " ⊗ " Y "]" => TensorCategory.tensor.factor_left Y
 
-class MonoidalCategory.{u, v} (C : Type u) extends TensorCategory.{u, v} C where
+class MonoidalCategory.{v, u} (C : Type u) extends TensorCategory.{v, u} C where
   I : C
 
   «λ'» (X : C) : I ⊗ X ≅ X
@@ -143,13 +143,13 @@ class MonoidalCategory.{u, v} (C : Type u) extends TensorCategory.{u, v} C where
     ((𝟙 W) ⨂ (α' X Y Z).morphism) ≫ (α' W (X ⊗ Y) Z).morphism ≫ ((α' W X Y).morphism ⨂ (𝟙 Z)) = (α' W X (Y ⊗ Z)).morphism ≫ (α' (W ⊗ X) Y Z).morphism
 
 @[reducible]
-def MonoidalCategory.α [MonoidalCategory.{u} C] (X Y Z : C) : X ⊗ (Y ⊗ Z) ⟶ (X ⊗ Y) ⊗ Z := (α' X Y Z).morphism
+def MonoidalCategory.α [MonoidalCategory.{v, u} C] (X Y Z : C) : X ⊗ (Y ⊗ Z) ⟶ (X ⊗ Y) ⊗ Z := (α' X Y Z).morphism
 
 @[reducible]
-def MonoidalCategory.«λ» [MonoidalCategory.{u} C] (X : C) : I ⊗ X ⟶ X := («λ'» X).morphism
+def MonoidalCategory.«λ» [MonoidalCategory.{v, u} C] (X : C) : I ⊗ X ⟶ X := («λ'» X).morphism
 
 @[reducible]
-def MonoidalCategory.ρ [MonoidalCategory.{u} C] (X : C) : X ⊗ I ⟶ X := (ρ' X).morphism
+def MonoidalCategory.ρ [MonoidalCategory.{v, u} C] (X : C) : X ⊗ I ⟶ X := (ρ' X).morphism
 
 open Lean PrettyPrinter Delaborator SubExpr Meta in
 section
@@ -184,9 +184,9 @@ def delab_Isomorphism_morphism_MonoidalCategory : Delab := do
 
 end
 
-class CartesianCategory.{u, v} (C : Type u) extends MonoidalCategory.{u, v} C : Type (max 1 u v) where
-  terminal : Terminal I
-  cartesian :
+-- class CartesianCategory (C : Type u) extends MonoidalCategory C where
+--   terminal : Terminal I
+--   cartesian :
 
 @[reducible]
 def Prod.bifunctor : (Type u × Type u) ⥤ Type u where
