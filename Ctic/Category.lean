@@ -62,6 +62,12 @@ theorem Isomorphism.invertible (f : X ≅ Y) : Invertible f.morphism := by
   exists f.inverse
   simp [f.forward, f.backward]
 
+noncomputable def Isomorphism.of_invertible {f : X ⟶ Y} (inv : Invertible f) : X ≅ Y where
+  morphism := f
+  inverse := inv.choose
+  forward := by simp [inv.choose_spec]
+  backward := by simp [inv.choose_spec]
+
 @[symm]
 def Isomorphism.symm (f : X ≅ Y) : Y ≅ X where
   morphism := f.inverse
