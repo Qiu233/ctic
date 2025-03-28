@@ -2,6 +2,8 @@ import Aesop
 import Mathlib.Logic.Equiv.Basic
 namespace CTIC
 
+attribute [ext] ULift PLift
+
 class Category.{v, u} (C : Type u) : Type max u (v + 1) where
   Hom : C → C → Sort (v + 1)
   id : ∀ (x : C), Hom x x
@@ -176,8 +178,8 @@ private theorem reduce_op_op.«1» (X : C) : Xᵒᵖᵒᵖ = X := by rfl
 @[simp]
 private theorem reduce_op_op.«2» (X : C) : Xᵒᵖ.unop = X := by rfl
 
-@[simp]
-private theorem reduce_op_op.«3» (X : Cᵒᵖ) : X.unopᵒᵖ = X := by rfl
+-- @[simp]
+-- private theorem reduce_op_op.«3» (X : Cᵒᵖ) : X.unopᵒᵖ = X := by rfl
 
 @[simp]
 private theorem reduce_op_op.«3'» (X : Opposite C) : X.unopᵒᵖ = X := by rfl
@@ -188,10 +190,10 @@ private theorem reduce_op_op.«4» (X : Cᵒᵖ) : Xᵒᵖᵒᵖ = X := by rfl
 @[simp]
 private theorem reduce_op_op.«4'» (X : Opposite C) : Xᵒᵖᵒᵖ = X := by rfl
 
-@[simp]
-private theorem reduce_op_op.«5» (X : Cᵒᵖ) : X.unop = Xᵒᵖ := by rfl
+-- @[simp]
+-- private theorem reduce_op_op.«5» (X : Cᵒᵖ) : X.unop = Xᵒᵖ := by rfl
 
-private theorem reduce_op_op.«5'» (X : Opposite C) : X.unop = Xᵒᵖ := by rfl
+-- private theorem reduce_op_op.«5'» (X : Opposite C) : X.unop = Xᵒᵖ := by rfl
 
 @[simp]
 private theorem reduce_op_op.«6» (X : C) :
@@ -210,7 +212,7 @@ instance Category.opposite [inst : Category C] : Category Cᵒᵖ where
 
 open Lean in
 @[app_unexpander Opposite.unop]
-def unexpand_Opposite_unop : PrettyPrinter.Unexpander
+private def unexpand_Opposite_unop : PrettyPrinter.Unexpander
   | `($(_) $x) => `($xᵒᵖ)
   | _ => throw ()
 
@@ -228,6 +230,13 @@ example {c : C} (f : X ≅ Y) : (c ⟶ X) ≃ (c ⟶ Y) := by
 def Monic (f : X ⟶ Y) := ∀ ⦃W : C⦄ (g h : W ⟶ X), g ≫ f = h ≫ f → g = h
 
 def Epic (f : X ⟶ Y) := ∀ ⦃Z : C⦄ (g h : Y ⟶ Z), f ≫ g = f ≫ h → g = h
+
+theorem Epic.of_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : Epic f → Epic g → Epic (f ≫ g) := by
+  simp [Epic]
+  intro h1 h2 W h i h3
+  apply h2
+  apply h1
+  simp [h3]
 
 theorem Invertible.monic_and_epic {f : X ⟶ Y} : Invertible f → Monic f ∧ Epic f := by
   intro ⟨g', h1, h2⟩
@@ -251,6 +260,9 @@ theorem Isomorphism.monic_and_epic (f : X ≅ Y) : Monic f.morphism ∧ Epic f.m
 
 theorem Isomorphism.monic (f : X ≅ Y) : Monic f.morphism := f.invertible.monic_and_epic.left
 theorem Isomorphism.epic (f : X ≅ Y) : Epic f.morphism := f.invertible.monic_and_epic.right
+
+theorem Isomorphism.monic_inverse (f : X ≅ Y) : Monic f.inverse := f.symm.monic
+theorem Isomorphism.epic_inverse (f : X ≅ Y) : Epic f.inverse := f.symm.epic
 
 @[ext]
 structure Monomorphism (X Y : C) where

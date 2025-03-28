@@ -1,4 +1,5 @@
 import Ctic.Adjunction
+import Ctic.Limit.HasLimits
 
 namespace CTIC
 
@@ -118,9 +119,6 @@ class TensorCategory.{v, u} (C : Type u) extends Category.{v, u} C where
 notation:310 lhs:310 " ⊗ " rhs:311 => Functor.obj TensorCategory.tensor (lhs, rhs)
 notation:310 lhs:310 " ⨂ " rhs:311 => Functor.map TensorCategory.tensor ⟨lhs, rhs⟩
 
--- notation:max "[" X " ⊗ " "-" "]" => TensorCategory.tensor.factor_right X
--- notation:max "[" "-" " ⊗ " Y "]" => TensorCategory.tensor.factor_left Y
-
 class MonoidalCategory.{v, u} (C : Type u) extends TensorCategory.{v, u} C where
   I : C
 
@@ -159,38 +157,109 @@ def delab_Isomorphism_morphism_MonoidalCategory : Delab := do
   let e ← getExpr
   guard <| e.getAppNumArgs == 5
   withNaryArg 4 do α <|> id_tensor <|> tensor_id
-  where
-    α := do
-      let e ← getExpr
-      guard <| e.isAppOfArity ``CTIC.MonoidalCategory.α' 5
-      let fn := e.getAppFn
-      let (_, ls) ← fn.const?.getM
-      let t := e.updateFn (Expr.const ``CTIC.MonoidalCategory.α ls)
-      withTheReader SubExpr (fun cfg => { cfg with expr := t }) delab
-    id_tensor := do
-      let e ← getExpr
-      guard <| e.isAppOfArity ``CTIC.MonoidalCategory.«λ'» 3
-      let fn := e.getAppFn
-      let (_, ls) ← fn.const?.getM
-      let t := e.updateFn (Expr.const ``CTIC.MonoidalCategory.«λ» ls)
-      withTheReader SubExpr (fun cfg => { cfg with expr := t }) delab
-    tensor_id := do
-      let e ← getExpr
-      guard <| e.isAppOfArity ``CTIC.MonoidalCategory.ρ' 3
-      let fn := e.getAppFn
-      let (_, ls) ← fn.const?.getM
-      let t := e.updateFn (Expr.const ``CTIC.MonoidalCategory.ρ ls)
-      withTheReader SubExpr (fun cfg => { cfg with expr := t }) delab
+where
+  α := do
+    let e ← getExpr
+    guard <| e.isAppOfArity ``CTIC.MonoidalCategory.α' 5
+    let fn := e.getAppFn
+    let (_, ls) ← fn.const?.getM
+    let t := e.updateFn (Expr.const ``CTIC.MonoidalCategory.α ls)
+    withTheReader SubExpr (fun cfg => { cfg with expr := t }) delab
+  id_tensor := do
+    let e ← getExpr
+    guard <| e.isAppOfArity ``CTIC.MonoidalCategory.«λ'» 3
+    let fn := e.getAppFn
+    let (_, ls) ← fn.const?.getM
+    let t := e.updateFn (Expr.const ``CTIC.MonoidalCategory.«λ» ls)
+    withTheReader SubExpr (fun cfg => { cfg with expr := t }) delab
+  tensor_id := do
+    let e ← getExpr
+    guard <| e.isAppOfArity ``CTIC.MonoidalCategory.ρ' 3
+    let fn := e.getAppFn
+    let (_, ls) ← fn.const?.getM
+    let t := e.updateFn (Expr.const ``CTIC.MonoidalCategory.ρ ls)
+    withTheReader SubExpr (fun cfg => { cfg with expr := t }) delab
 
 end
 
 class CartesianCategory.{v, u} (C : Type u) extends MonoidalCategory.{v, u} C where
-  cartesian (X Y : C) : Σ' (r : Contravariant.Representation Hom[Δ(-), Diagram.Discrete.Binary.{v, u} X Y]), r.obj ≅ X ⊗ Y
+  cartesian (X Y : C) : Contravariant.RepresentedBy Hom[Δ(-), Diagram.Binary.Discrete.{v, u} X Y] (X ⊗ Y)
 
 @[reducible]
 def Prod.bifunctor : (Type u × Type u) ⥤ Type u where
   obj X := X.1 × X.2
   map {X Y} f x := ⟨f.1 x.1, f.2 x.2⟩
+
+notation:500 "[" X:500 " ⊗ " "-" "]" => TensorCategory.tensor.factor_left X
+notation:500 "[" "-" " ⊗ " Y:500 "]" => TensorCategory.tensor.factor_right Y
+
+class MonoidalClosed.{v, u} (C : Type u) extends MonoidalCategory.{v, u} C where
+  exp : (Cᵒᵖ × C) ⥤ C
+  adj (X : C) : [-⊗X] ⊣ exp.factor_left Xᵒᵖ
+
+class CartesianClosed.{v, u} (C : Type u) extends MonoidalClosed.{v, u} C, CartesianCategory.{v, u} C where
+
+instance [inst : MonoidalClosed C] : HomogeneousPow C where
+  pow X Y := inst.exp (Xᵒᵖ, Y)
+
+notation:500 "[" X:500 ", " "-" "]" => MonoidalClosed.exp.factor_left Xᵒᵖ
+notation:500 "[" "-" ", " Y:500 "]" => MonoidalClosed.exp.factor_right  Y
+
+open Lean PrettyPrinter Delaborator SubExpr Meta in
+section
+
+@[delab app.CTIC.Functor.obj]
+private def delab_Functor_obj_tensor : Delab := do
+  let e ← getExpr
+  guard <| e.getAppNumArgs == 6
+  let inop? ← ((e.getArg! 5).app4? ``HasOpposite.op).mapM fun (_, _, _, _) => withNaryArg 5 do withNaryArg 3 do delab
+  let expr ← withNaryArg 5 delab
+  let e := e.getArg! 4
+  if e.isAppOfArity ``Functor.factor_left 7 then
+    if (e.getArg! 6).isAppOfArity ``TensorCategory.tensor 2 then
+      `([$expr ⊗ -])
+    else if (e.getArg! 6).isAppOfArity ``MonoidalClosed.exp 2 then
+      match inop? with
+      | none => `([$exprᵒᵖ, -])
+      | some inop => `([$inop, -])
+    else failure
+  else if e.isAppOfArity ``Functor.factor_right 7 then
+    if (e.getArg! 6).isAppOfArity ``TensorCategory.tensor 2 then
+      `([- ⊗ $expr])
+    else if (e.getArg! 6).isAppOfArity ``MonoidalClosed.exp 2 then
+      `([-, $expr])
+    else failure
+  else failure
+
+end
+
+open Lean in
+@[app_unexpander Functor.obj]
+private def unexpand_exp : PrettyPrinter.Unexpander
+  | `($(_) $f $yᵒᵖ) =>
+    match f with
+    | `([-, $x]) => `($y ^ $x)
+    | _ => throw ()
+  | `($(_) $f $y) =>
+    match f with
+    | `([$x, -]) => `($x ^ $y)
+    | `([-, $x]) => `($yᵒᵖ ^ $x)
+    | _ => throw ()
+  | _ => throw ()
+
+variable [MonoidalClosed C] in
+section
+
+@[simp]
+private theorem reduce_exp_fl {X Y : C} : [X, -].obj Y = X ^ Y := by rfl
+
+@[simp]
+private theorem reduce_exp_fr {X Y : C} : [-, Y].obj Xᵒᵖ = X ^ Y := by rfl
+
+@[simp]
+private theorem reduce_exp_fr' {X : Cᵒᵖ} {Y : C} : [-, Y].obj X = Xᵒᵖ ^ Y := by rfl
+
+end
 
 namespace Prod
 
@@ -229,31 +298,51 @@ instance : MonoidalCategory (Type u) where
   triangle {X Y} := by rfl
   pentagon {W X Y Z} := by rfl
 
-instance : CartesianCategory (Type u) where
+def exp_functor : ((Type u)ᵒᵖ × Type u) ⥤ Type u where
+  obj := λ ⟨X, Y⟩ => Xᵒᵖ → Y
+  map {L R} f := by
+    obtain ⟨⟨X⟩, Y⟩ := L
+    obtain ⟨⟨A⟩, B⟩ := R
+    obtain ⟨f : A ⟶ X, g : Y ⟶ B⟩ := f
+    exact (f ≫ · ≫ g)
+
+def tensor_hom (X : Type u) : Prod.bifunctor.factor_right X ⊣ exp_functor.factor_left (Opposite.op X) where
+  η := ⟨fun A a x => ⟨a, x⟩, by intros; funext; rfl⟩
+  ε := ⟨fun A (f, x) => f x, by intros; funext; rfl⟩
+  upper := by intro _; rfl
+  lower := by intro _; rfl
+
+instance : CartesianClosed (Type u) where
+  exp := exp_functor
+  adj := tensor_hom
   cartesian {X Y} := by
-    let t : Contravariant.Representation Hom[Δ(-), Diagram.Discrete.Binary X Y] := ⟨X ⊗ Y, by
-      let s : Δ (X ⊗ Y) ⟶ Diagram.Discrete.Binary X Y := by
-        use fun
-          | .X => Prod.fst
-          | .Y => Prod.snd
-        intro a b f
-        cases a <;> (cases b <;> (first | rfl | cases f.down))
-      let p := Yoneda.Contravariant.t2 Hom[Δ(-), Diagram.Discrete.Binary X Y] (X ⊗ Y) s
-      let q : Hom[Δ(-), Diagram.Discrete.Binary X Y] ⟹ HomCon (X ⊗ Y) := by
-        use fun ⟨P⟩ f p => ⟨f.component .X p, f.component .Y p⟩
-        intros
-        rfl
-      use p, q
-      . rfl
-      . simp [Category.id, Category.comp, NatTrans.id, NatTrans.comp]
-        congr
-        funext ⟨P⟩ f
-        rw [NatTrans.ext_iff]
-        funext t
-        cases t <;> rfl
-      ⟩
-    use t
-    simp [t]
-    apply Isomorphism.id
+    refine Contravariant.RepresentedBy.intro ?_
+    let s : Δ (X ⊗ Y) ⟶ Diagram.Binary.Discrete X Y := by
+      use fun
+        | 0 => Prod.fst
+        | 1 => Prod.snd
+      intro a b f
+      cases f.down
+      match a with
+      | 0 | 1 => rfl
+    let p := Yoneda.Contravariant.t2 Hom[Δ(-), Diagram.Binary.Discrete X Y] (X ⊗ Y) ⟨s⟩
+    let q : Hom[Δ(-), Diagram.Binary.Discrete X Y] ⟹ HomCon (X ⊗ Y) := by
+      use fun ⟨P⟩ f p => ⟨f.component 0 p, f.component 1 p⟩
+      intros
+      rfl
+    use p, q
+    . rfl
+    . simp [Category.id, Category.comp, NatTrans.id, NatTrans.comp]
+      congr
+      funext ⟨P⟩ f
+      rw [NatTrans.ext_iff]
+      funext t
+      match t with
+      | 0 | 1 => rfl
 
 end Prod
+
+example [CartesianCategory.{v, u} C] : HasLimitsOfShape C (Discrete (Fin 2)) where
+  limits F := by
+    apply HasLimit.intro
+    -- constructor

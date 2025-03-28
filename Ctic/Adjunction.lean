@@ -8,6 +8,8 @@ class Adjunction [Category C] [Category D] (F : C ⥤ D) (G : D ⥤ C) where
   upper {X : C} : F.map (η X) ≫ ε (F X) = 𝟙 (F X) -- top right diagonal diagram
   lower {Y : D} : η (G Y) ≫ G.map (ε Y) = 𝟙 (G Y) -- bottom left diagonal diagram
 
+infix:350 " ⊣ " => Adjunction
+
 namespace Adjunction
 
 variable {C : Type u} {D : Type v}
@@ -89,7 +91,7 @@ def Sharp (Y : D) : Hom[F(-), Y] ≅ Hom[-, G Y] where
     simp [Functor.id, Functor.comp] at this
     rw [← Category.assoc, ← this]
     rw [Category.assoc, upper]
-    rw [Category.id_comp]
+    rw [Category.id_comp (x := F X)]
   backward := by
     simp [Category.comp, NatTrans.comp, Category.id, NatTrans.id]
     congr
