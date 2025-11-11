@@ -90,7 +90,9 @@ def Sharp (Y : D) : Hom[F(-), Y] ≅ Hom[-, G Y] where
     have := (ε (F := F) (G := G)).naturality f
     simp [Functor.id, Functor.comp] at this
     rw [← Category.assoc, ← this]
-    rw [Category.assoc, upper]
+    rw [Category.assoc]
+    simp [HasOpposite.op, Functor.opposite]
+    rw [upper]
     rw [Category.id_comp (x := F X)]
   backward := by
     simp [Category.comp, NatTrans.comp, Category.id, NatTrans.id]

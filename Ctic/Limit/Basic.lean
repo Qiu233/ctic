@@ -3,10 +3,12 @@ import Ctic.Functor
 
 namespace CTIC
 
+@[ext]
 structure Cone {J C : Type*} [Category J] [Category C] (F : J ⥤ C) where
   N : C
   π' : (Functor.const N) ⟶ F
 
+@[ext]
 structure ConeHom {J C : Type*} [Category J] [Category C] {F : J ⥤ C} (X Y : Cone F) where
   u : X.N ⟶ Y.N
   universal : ∀ j : J, u ≫ (Y.π'.component j) = (X.π'.component j)

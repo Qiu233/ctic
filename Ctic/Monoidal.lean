@@ -100,10 +100,8 @@ example {F G : (C × D) ⥤ E} (η : ∀ (c : C) (d : D), F (c, d) ⟶ G (c, d))
     F ⟹ G where
   component X := η X.fst X.snd
   naturality {X Y} f := by
-    simp
     have : f = (⟨𝟙 X.1, f.2⟩ : ((X.1, X.2) ⟶ (X.1, Y.2))) ≫ (⟨f.1, 𝟙 Y.2⟩ : ((X.1, Y.2) ⟶ (Y.1, Y.2))) := by
       simp [Category.comp]
-      rfl
     rw [this]
     simp
     rw [α X.1 X.2 Y.2 f.2]
@@ -342,7 +340,7 @@ instance : CartesianClosed (Type u) where
 
 end Prod
 
-example [CartesianCategory.{v, u} C] : HasLimitsOfShape C (Discrete (Fin 2)) where
-  limits F := by
-    apply HasLimit.intro
+-- example [CartesianCategory.{v, u} C] : HasLimitsOfShape C (Discrete (Fin 2)) where
+--   limits F := by
+    -- apply HasLimit.intro
     -- constructor

@@ -14,6 +14,8 @@ class Category.{v, u} (C : Type u) : Type max u (v + 1) where
 
 abbrev SmallCategory.{u} := Category.{u, u}
 
+instance [inst : SmallCategory.{u} C] : Category.{u, u} C := inst
+
 infix:300 " ⟶ " => Category.Hom
 prefix:320 "𝟙 " => Category.id
 infixl:300 " ≫ " => Category.comp
@@ -114,7 +116,7 @@ class Groupoid (C : Type u) extends Category C where
 @[ext]
 structure SliceUnder (c : C) : Type max u v where
   var : C
-  hom : c ⟶ x
+  hom : c ⟶ var
 
 abbrev SliceUnderHom {c : C} (f g : SliceUnder c) :=
   { h : f.var ⟶ g.var // f.hom ≫ h = g.hom }
@@ -122,7 +124,7 @@ abbrev SliceUnderHom {c : C} (f g : SliceUnder c) :=
 @[ext]
 structure SliceOver (c : C) : Type max u v where
   var : C
-  hom : x ⟶ c
+  hom : var ⟶ c
 
 abbrev SliceOverHom {c : C} (f g : SliceOver c) :=
   { h : f.var ⟶ g.var // h ≫ g.hom = f.hom }
