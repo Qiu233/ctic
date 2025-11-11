@@ -16,11 +16,9 @@ structure CommaHom [Category C] [Category D] [Category E] {F : D ⥤ C} {G : E �
 instance {C D E : Type*} [Category C] [Category D] [Category E] (F : D ⥤ C) (G : E ⥤ C) : Category (Comma F G) where
   Hom X Y := CommaHom X Y
   id X := by
-    simp
     apply CommaHom.mk (𝟙 X.d) (𝟙 X.e)
     simp [Functor.map_id]
   comp {X Y Z} := by
-    simp
     intro f g
     apply CommaHom.mk (f.k ≫ g.k) (f.h ≫ g.h)
     simp [Functor.map_comp]

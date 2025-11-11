@@ -63,6 +63,7 @@ lemma isic_of_terminal_in_category_of_elements
       rw [CommaHom.ext_iff] at h7
       simp at h7
       simp [h7]
+      rfl
     have h10 : ((Yoneda.Contravariant.Embedding (C := C)).map g ≫ α) = (Yoneda.Contravariant.t2 F Xᵒᵖ) ⟨α.component X g⟩ := by
       have := (Yoneda.Contravariant.monic_t1 F Xᵒᵖ)
       rw [Function.Monic_iff_Injective] at this
@@ -84,6 +85,7 @@ lemma isic_of_terminal_in_category_of_elements
       rw [CommaHom.ext_iff] at h12
       simp at h12
       simp [h12]
+      rfl
     rw [h8, h13]
     exact h3
   . rw [Function.Epic_iff_Surjective]
@@ -91,7 +93,7 @@ lemma isic_of_terminal_in_category_of_elements
     change F X at e
     let s : ∫ F := ⟨Xᵒᵖ, (), Yoneda.Contravariant.t2 F Xᵒᵖ ⟨e⟩⟩
     have h1 : s.f.component X (𝟙 X) = e := by
-      simp [s, Yoneda.Contravariant.iso]
+      simp [s, Yoneda.Contravariant.iso, Category.id]
       change (F.map (𝟙 X)) e = e
       rw [Functor.map_id (X := X)]
       simp [Category.id]
@@ -101,8 +103,7 @@ lemma isic_of_terminal_in_category_of_elements
     have h3 : (α.component X) t.k = s.f.component X (𝟙 X) := by
       rw [h2]
       simp [Yoneda.Contravariant.Embedding]
-      simp [Category.comp]
-      rw [Category.id_comp (x := X.unop) (f := t.k)]
+      simp [Category.comp, Category.id]
     have h4 := Eq.trans h3 h1
     use t.k
 
@@ -122,7 +123,6 @@ lemma terminal_in_category_of_elements_of_isic.unique {L : ∫ F} (isic : Invert
   intro X f
   obtain ⟨k, h, commu⟩ := f
   simp at commu
-  simp
   congr
   apply (Yoneda.Contravariant.FullyFaithful (C := C)).right
   rw [(Yoneda.Contravariant.FullyFaithful (C := C)).map_inv]
@@ -210,7 +210,6 @@ theorem nat_trans_eq_iff_component_eq {C : Type u} {D : Type u1} [Category.{v} C
   . intro h
     have : (Yoneda.Contravariant.iso F c).morphism α = (Yoneda.Contravariant.iso F c).morphism β := by rw [h]
     simp [Yoneda.Contravariant.iso, Yoneda.Contravariant.t1] at this
-    rw [ULift.ext_iff] at this
     exact this
   . intro h
     have := (Yoneda.Contravariant.iso F c).monic
@@ -248,7 +247,7 @@ private def rep2terminal [Category C] [Category D] {d : D} (F : C ⥤ D) : Repre
             (Yoneda.Contravariant.iso Hom[F(-), d] X.d).morphism (Yoneda.Contravariant.Embedding.map g ≫ α.morphism)
         rw [(Yoneda.Contravariant.iso Hom[F(-), d] X.d).backward]
         change { down := X.f : ULift (Hom[F X.d, d]) } = { down := (Yoneda.Contravariant.Embedding.map g ≫ α.morphism).component X.dᵒᵖ (𝟙 X.d) }
-        rw [ULift.ext_iff]
+        congr 1
         change X.f = α.morphism.component X.dᵒᵖ (𝟙 X.d ≫ g)
         rw [Category.id_comp (x := X.d) (f := g)]
         change X.f = ((α.inverse.component X.dᵒᵖ) ≫ (α.morphism.component X.dᵒᵖ)) X.f
@@ -258,7 +257,7 @@ private def rep2terminal [Category C] [Category D] {d : D} (F : C ⥤ D) : Repre
     have eq := terminal.unique (f := s)
     have := terminal.morphism X' |>.commu
     simp [Yoneda.Contravariant.iso, Yoneda.Contravariant.t2, Yoneda.Contravariant.Embedding] at this
-    change X'.f = Yoneda.Contravariant.Embedding.map (Terminal.morphism X').k ≫ elem.f at this
+    change X'.f = Yoneda.Contravariant.Embedding.map (terminal.morphism X').k ≫ elem.f at this
     have := eq ▸ this
     change X'.f = Yoneda.Contravariant.Embedding.map g ≫ α.morphism at this
     change (Yoneda.Contravariant.iso Hom[F(-), d] X.d |>.inverse ⟨X.f⟩) = Yoneda.Contravariant.Embedding.map g ≫ α.morphism at this
@@ -268,7 +267,7 @@ private def rep2terminal [Category C] [Category D] {d : D} (F : C ⥤ D) : Repre
     have := funext_iff.mp this (𝟙 X.d)
     simp at this
     change Hom[F(-), d].map (𝟙 X.dᵒᵖ) X.f = (α.morphism.component X.dᵒᵖ) g at this
-    simp [Yoneda.Contravariant.Embedding, HomCon, Functor.comp] at this
+    simp [Yoneda.Contravariant.Embedding, HomCon, Functor.comp, Category.id] at this
     change ((𝟙 (F X.d)) ≫ X.f) = (α.morphism.component X.dᵒᵖ) g at this
     rewrite [Category.id_comp (x := F X.d)] at this
     exact this
@@ -308,13 +307,14 @@ private def terminal2rep [Category C] [Category D] {d : D} (F : C ⥤ D) : (Σ' 
     let p : Comma F (TrivialFunctor d) := ⟨X, (), t⟩
     let q : Comma F (TrivialFunctor d) := ⟨Y, (), Hom[F(-), d].map f t⟩
     change f ≫ (terminal.morphism p).k = (terminal.morphism q).k
-    let s : CommaHom q c := ⟨f ≫ (Terminal.morphism p).k, (), by
+    let s : CommaHom q c := ⟨f ≫ (terminal.morphism p).k, (), by
       simp [Yoneda.Contravariant.Embedding, HomCon, Functor.comp]
       have := (terminal.morphism q).commu
       have := (terminal.morphism p).commu
       simp at this
       rw [← Category.assoc]
       rw [← this]
+      rfl
       ⟩
     have := terminal.unique (f := s)
     rw [← this]
@@ -327,7 +327,7 @@ private def terminal2rep [Category C] [Category D] {d : D} (F : C ⥤ D) : (Σ' 
     simp
     let p : Comma F (TrivialFunctor d) := ⟨x, (), F.map t ≫ c.f⟩
     change (terminal.morphism p).k = t
-    let s : CommaHom p c := ⟨t, (), by simp⟩
+    let s : CommaHom p c := ⟨t, (), by simp [p]⟩
     have := terminal.unique (f := s)
     rw [← this]
   . rw [NatTrans.ext_iff]
@@ -340,7 +340,7 @@ private def terminal2rep [Category C] [Category D] {d : D} (F : C ⥤ D) : (Σ' 
     change F.map (terminal.morphism p).k ≫ c.f = t
     have := (terminal.morphism p).commu
     simp at this
-    rw [this]
+    rw [← this]
 
 def down [Category C] [Category D] {d : D} (F : C ⥤ D) : Representation Hom[F(-), d] ≅ Σ' (c : Comma F (TrivialFunctor d)), Terminal c := by
   use rep2terminal F, terminal2rep F
@@ -370,8 +370,7 @@ def down [Category C] [Category D] {d : D} (F : C ⥤ D) : Representation Hom[F(
     . have : { d := c.d, e := (), f := (Fᵒᵖ ⋙ Hom[-, d]).map (𝟙 c.dᵒᵖ) c.f } = c := by
         rw [Comma.ext_iff]
         simp
-        simp [Yoneda.Contravariant.Embedding, HomCon, Category.comp, Functor.comp]
-        rw [Category.id_comp (x := F c.d)]
+        simp [Yoneda.Contravariant.Embedding, HomCon, Category.comp, Functor.comp, Category.id]
       apply HEq.trans (b := this ▸ α)
       . congr
         funext x
@@ -386,6 +385,4 @@ def down [Category C] [Category D] {d : D} (F : C ⥤ D) : Representation Hom[F(
             rw [Category.id_comp (x := F c.d)]
           . simp
         . rfl
-      . apply eq_rec_heq
-
--- example [Category C] [Category D] {d : D} (F : C ⥤ D) : ∀ (r : Representation Hom[F(-), d]), ((down F).morphism r).fst.d = r.obj := by intro; rfl
+      . simp

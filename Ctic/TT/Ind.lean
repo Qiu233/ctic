@@ -148,6 +148,8 @@ def Nat.Alg.Initial : Initial Nat.Alg where
       have := hf (.inr n)
       simp at this
       simp at hf
-      simp [hf.2]
-      have : ((Sum.inr (f n)) : Unit ⊕ Y.A) = (Sum.inr (Nat.rec (Y.α (Sum.inl ())) (fun _ ih ↦ Y.α (Sum.inr ih)) n)) := by congr
       rw [this]
+      simp
+      apply congrArg
+      apply congrArg
+      exact ih

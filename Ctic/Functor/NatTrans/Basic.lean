@@ -41,11 +41,11 @@ theorem NatTrans.assoc [Category C] [Category D] {F G H J : C ⥤ D} {α : F ⟹
 
 @[simp]
 theorem NatTrans.id_comp [Category C] [Category D] {F G : C ⥤ D} {α : F ⟹ G} : (NatTrans.id F).comp α = α := by
-  simp [NatTrans.comp, NatTrans.id]
+  simp [NatTrans.comp]
 
 @[simp]
 theorem NatTrans.comp_id [Category C] [Category D] {F G : C ⥤ D} {α : F ⟹ G} : α.comp (NatTrans.id G) = α := by
-  simp [NatTrans.comp, NatTrans.id]
+  simp [NatTrans.comp]
 
 instance [Category C] [Category D] : Category (C ⥤ D) where
   Hom X Y := NatTrans X Y

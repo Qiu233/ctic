@@ -2,7 +2,7 @@ import Aesop
 import Mathlib.Logic.Equiv.Basic
 namespace CTIC
 
-attribute [ext] ULift PLift
+-- attribute [ext] ULift PLift
 
 class Category.{v, u} (C : Type u) : Type max u (v + 1) where
   Hom : C → C → Sort (v + 1)
@@ -152,34 +152,36 @@ structure Opposite (C : Type u) where
 class HasOpposite (α : Sort u) (β : outParam (Sort v)) where
   op : α → β
 
+attribute [reducible] HasOpposite.op
+
 postfix:max "ᵒᵖ" => HasOpposite.op
 
 @[reducible]
-instance : HasOpposite (Type u) (Type u) where
+instance op_type.«0» : HasOpposite (Type u) (Type u) where
   op α := Opposite α
 
 @[reducible]
-instance [Category C] : HasOpposite C Cᵒᵖ where
+instance op_cat.«0» [Category C] : HasOpposite C Cᵒᵖ where
   op := Opposite.op
 
 @[reducible]
-instance [Category C] : HasOpposite Cᵒᵖ C where
+instance op_cat.«1» [Category C] : HasOpposite Cᵒᵖ C where
   op := Opposite.unop
 
 @[reducible]
-instance [Category C] : HasOpposite C (Opposite C) := instHasOppositeOpOfCategory
+instance op_cat.«2» [Category C] : HasOpposite C (Opposite C) := op_cat.«0»
 
 @[reducible]
-instance [Category C] : HasOpposite (Opposite C) C := instHasOppositeOpOfCategory_1
+instance op_cat.«3» [Category C] : HasOpposite (Opposite C) C := op_cat.«1»
 
 @[simp]
-private theorem reduce_op_op.«1» (X : C) : Xᵒᵖᵒᵖ = X := by rfl
+theorem reduce_op_op.«1» (X : C) : Xᵒᵖᵒᵖ = X := by rfl
 
 @[simp]
 private theorem reduce_op_op.«2» (X : C) : Xᵒᵖ.unop = X := by rfl
 
--- @[simp]
--- private theorem reduce_op_op.«3» (X : Cᵒᵖ) : X.unopᵒᵖ = X := by rfl
+@[simp]
+private theorem reduce_op_op.«3» (X : Cᵒᵖ) : X.unopᵒᵖ = X := by rfl
 
 @[simp]
 private theorem reduce_op_op.«3'» (X : Opposite C) : X.unopᵒᵖ = X := by rfl
@@ -190,18 +192,34 @@ private theorem reduce_op_op.«4» (X : Cᵒᵖ) : Xᵒᵖᵒᵖ = X := by rfl
 @[simp]
 private theorem reduce_op_op.«4'» (X : Opposite C) : Xᵒᵖᵒᵖ = X := by rfl
 
--- @[simp]
--- private theorem reduce_op_op.«5» (X : Cᵒᵖ) : X.unop = Xᵒᵖ := by rfl
+@[simp]
+private theorem reduce_op_op.«5» (X : Cᵒᵖ) : X.unop = Xᵒᵖ := by rfl
 
--- private theorem reduce_op_op.«5'» (X : Opposite C) : X.unop = Xᵒᵖ := by rfl
+private theorem reduce_op_op.«5'» (X : Opposite C) : X.unop = Xᵒᵖ := by rfl
 
 @[simp]
 private theorem reduce_op_op.«6» (X : C) :
-    @HasOpposite.op _ _ instHasOppositeOpOfCategory_1 { unop := X : Cᵒᵖ } = X := by rfl
+    @HasOpposite.op _ _ op_cat.«1» { unop := X : Cᵒᵖ } = X := by rfl
 
 @[simp]
 private theorem reduce_op_op.«7» (X : C) :
-    @HasOpposite.op _ _ instHasOppositeOppositeOfCategory_1 { unop := X : Cᵒᵖ } = X := by rfl
+    @HasOpposite.op _ _ op_cat.«1» { unop := X : Cᵒᵖ } = X := by rfl
+
+@[simp]
+private theorem reduce_op_op_id_comp.«1» (X Y : C) (f : X ⟶ Y) : Category.comp (x := Xᵒᵖᵒᵖ) (y := X) (z := Y) (𝟙 X) f = f := by
+  rw [Category.id_comp (x := X)]
+
+@[simp]
+private theorem reduce_op_op_id_comp.«2» (X Y : C) (f : X ⟶ Y) : Category.comp (x := X) (y := Xᵒᵖᵒᵖ) (z := Y) (𝟙 X) f = f := by
+  rw [Category.id_comp (x := X)]
+
+@[simp]
+private theorem reduce_op_op_comp_id.«1» (X Y : C) (f : X ⟶ Y) : Category.comp (x := X) (y := Y) (z := Yᵒᵖᵒᵖ) f (𝟙 Y) = f := by
+  rw [Category.comp_id (y := Y)]
+
+@[simp]
+private theorem reduce_op_op_comp_id.«2» (X Y : C) (f : X ⟶ Y) : Category.comp (x := X) (y := Yᵒᵖᵒᵖ) (z := Y) f (𝟙 Y) = f := by
+  rw [Category.comp_id (y := Y)]
 
 @[reducible, simp]
 instance Category.opposite [inst : Category C] : Category Cᵒᵖ where
@@ -221,7 +239,7 @@ instance [Category C] : Category (Opposite C) := Category.opposite
 example {c : C} (f : X ≅ Y) : (c ⟶ X) ≃ (c ⟶ Y) := by
   let toFun : (c ⟶ X) → (c ⟶ Y) := fun α => α ≫ f.morphism
   let invFun : (c ⟶ Y) → (c ⟶ X) := fun α => α ≫ f.inverse
-  apply Equiv.mk toFun invFun
+  refine Equiv.mk toFun invFun ?_ ?_
   . intro p
     simp [toFun, invFun, ← Category.assoc]
   . intro p
@@ -292,8 +310,7 @@ The converse does not hold generally, but holds for sets/types.
 See the example below.
 -/
 theorem Monic.of_comp {f : X ⟶ Y} {g : Y ⟶ Z} : Monic (f ≫ g) → Monic f := by
-  intro h1
-  intro W α β h2
+  intro h1 W α β h2
   apply h1
   simp [Category.assoc, h2]
 
@@ -344,7 +361,7 @@ theorem Function.Epic_iff_Surjective {X Y : Type u} [DecidableEq Y] {f : X ⟶ Y
         simp [h1]
       . simp [h]
     have h4 := h2 h3
-    have h5 : g b ≠ h b := by simp [g, h]; trivial
+    have h5 : g b ≠ h b := by simp [g, h]
     apply h5
     simp [h4]
   . intro surj Z g h h1

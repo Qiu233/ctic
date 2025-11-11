@@ -96,7 +96,7 @@ abbrev t2.{v, u} [Category.{v, u} C] (F : C ⥤ Type v) (x : C) : ULift.{u, v} (
   simp [t]
   simp [Category.comp]
   funext u
-  simp [t]
+  simp
   simp [Category.comp]
 
 def iso.{v, u} [Category.{v, u} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F) ≅ ULift.{u, v} (F x) where
@@ -105,14 +105,13 @@ def iso.{v, u} [Category.{v, u} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F
   forward := by
     simp [Category.comp]
     funext α
-    simp [t2, t1]
+    simp [t1, t2]
     ext v
     congr
     ext y f
     clear v
-    simp [HomCov] at f
     have := α.naturality_expanded_set_valued f (𝟙 x)
-    simp [HomCov] at this
+    simp at this
     exact this
   backward := by
     simp [Category.comp]
@@ -123,7 +122,6 @@ def iso.{v, u} [Category.{v, u} C] (F : C ⥤ Type v) (x : C) : (Hom[x, -] ⟹ F
 def yoneda_factor_x [Category.{u} C] (F : C ⥤ Type u) : C ⥤ Type u where
   obj x := Hom[x, -] ⟹ F
   map {X Y} f := by
-    simp
     intro T
     let t : (Z : C) → Hom[Y, Z] ⟶ F.obj Z := by
       intro Z g
@@ -167,7 +165,6 @@ def natural_in_x.{u} [Category.{u} C] (F : C ⥤ Type u) : yoneda_factor_x F ≅
     simp
     simp [iso, t1, yoneda_factor_x]
     simp [Category.comp]
-    rfl
   forward := by
     simp [Category.id, NatTrans.id]
     simp [Category.comp, NatTrans.comp]
@@ -347,7 +344,6 @@ abbrev t2.{v, u} [Category.{v, u} C] (F : Cᵒᵖ ⥤ Type v) (y : C) : ULift.{u
   simp [Category.comp]
   funext u
   simp [t]
-  change yᵒᵖ ⟶ X at u
   change F.map f (F.map u Fx) = F.map (u ≫ f) Fx
   rw [Functor.map_comp]
   simp [Category.comp]
@@ -363,7 +359,6 @@ def iso.{v, u} [Category.{v, u} C] (F : Cᵒᵖ ⥤ Type v) (x : C) : (Hom[-, x]
     congr
     ext y f
     clear v
-    simp [HomCov] at f
     have := α.naturality_expanded_set_valued f (𝟙 x)
     simp [HomCov] at this
     exact this
@@ -409,7 +404,7 @@ def Faithful.{v, u} [Category.{v, u} C] : (Embedding (C := C)).Faithful := by
     rw [funext_iff]
     intro h
   specialize h1 (Xᵒᵖ) (𝟙 Xᵒᵖ)
-  simp at h1
+  simp [Category.id] at h1
   exact h1
 
 def Full.{v, u} [Category.{v, u} C] : (Embedding (C := C)).Full := by

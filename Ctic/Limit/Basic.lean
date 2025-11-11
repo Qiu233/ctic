@@ -76,6 +76,7 @@ instance : Category Unit where
   comp _ _ := ()
   assoc := by simp
 
+@[reducible]
 def TrivialFunctor [Category C] (c : C) : Unit ⥤ C where
   obj _ := c
   map _ := 𝟙 c
@@ -102,13 +103,13 @@ def delab_TrivialFunctor_obj : Delab := do
 end
 
 @[simp]
-theorem TrivialFunctor.map_eq [Category C] {c : C} {f : X ⟶ Y} : (TrivialFunctor c).map f = 𝟙 c := by simp [TrivialFunctor]
+theorem TrivialFunctor.map_eq [Category C] {c : C} {f : X ⟶ Y} : (TrivialFunctor c).map f = 𝟙 c := by simp
 
 @[simp]
-theorem TrivialFunctor.obj_eq [Category C] {c : C} : (TrivialFunctor c).obj X = c := by simp [TrivialFunctor]
+theorem TrivialFunctor.obj_eq [Category C] {c : C} : (TrivialFunctor c).obj X = c := by simp
 
 @[simp]
-theorem TrivialFunctor.obj_eq' [Category C] {c : C} : (TrivialFunctor c) X = c := by simp [TrivialFunctor]
+theorem TrivialFunctor.obj_eq' [Category C] {c : C} : (TrivialFunctor c) X = c := by simp
 
 private def aux_1 [Category C] [Category D] (F : C ⥤ D) : Cone F ⥤ Comma Δ (TrivialFunctor F) := by
   let obj : Cone F → Comma Δ (TrivialFunctor F) := fun x => Comma.mk x.N () x.π'
@@ -129,7 +130,7 @@ private def aux_2 [Category C] [Category D] (F : C ⥤ D) : Comma Δ (TrivialFun
   let obj : Comma Δ (TrivialFunctor F) → Cone F := fun x => ⟨x.d, x.f⟩
   let map {X Y : Comma Δ (TrivialFunctor F)} : X ⟶ Y → obj X ⟶ obj Y := fun f => ⟨f.k, by
       intro j
-      simp
+      simp [obj]
       have := f.commu
       simp at this
       rw [this]

@@ -86,7 +86,7 @@ private lemma lemma_1_5_10.iv : ∀ {f' : a' ⟶ b'}, α.morphism ≫ f' ≫ β.
   simp
 
 def HomEquiv (α : a ≅ a') (β : b ≅ b') : (a ⟶ b) ≃ (a' ⟶ b') := by
-  apply Equiv.mk (lemma_1_5_10.i (α := α) (β := β)) (lemma_1_5_10.i (α := α.symm) (β := β.symm))
+  refine Equiv.mk (lemma_1_5_10.i (α := α) (β := β)) (lemma_1_5_10.i (α := α.symm) (β := β.symm)) ?_ ?_
   . intro f
     simp [lemma_1_5_10.i, Isomorphism.symm]
     simp [← Category.assoc]
@@ -173,8 +173,7 @@ theorem Functor.FullyFaithful.iff {C D : Type*} [Category C] [Category D] {F : C
       simp [this.injective]
 
 noncomputable def Functor.FullyFaithful.essentially_injective {C D : Type*} [Category C] [Category D] {F : C ⥤ D} : F.FullyFaithful → F.EssentiallyInjective := by
-  intro ⟨full, faithful⟩
-  intro X Y iso
+  intro ⟨full, faithful⟩ X Y iso
   simp [Functor.Full] at full
   simp [Functor.Faithful] at faithful
   have t1 := full iso.morphism
@@ -195,7 +194,6 @@ private noncomputable def invFunctor {C D : Type*} [Category C] [Category D] {F 
     rw [t.choose_spec]
     simp
   map_comp {FX FY FZ Ff Fg} := by
-    simp [-Category.assoc]
     apply faithful
     simp [-Category.assoc]
     let t1 := full ((surj FX).snd.morphism ≫ (Ff ≫ Fg) ≫ (surj FZ).snd.inverse)
@@ -276,8 +274,7 @@ noncomputable def Category.Equivalence.of_fully_faithful_essentially_surjective 
       simp [eta1, eta2]
 
 theorem Functor.FullyFaithful.reflects {C D : Type*} [Category C] [Category D] {F : C ⥤ D} {X Y : C} {f : X ⟶ Y} : F.FullyFaithful → Invertible (F.map f) → Invertible f := by
-  intro ff
-  intro ⟨g, hg⟩
+  intro ff ⟨g, hg⟩
   simp [Invertible]
   have := ff.left (X := Y) (Y := X) g
   use this.choose
@@ -333,6 +330,7 @@ def Category.Equivalence.comp {C D E : Type*} [Category C] [Category D] [Categor
       congr
       funext X
       simp [Functor.id]
+      simp [t2]
       simp [Category.assoc]
       simp [← Functor.map_comp]
       rw [Category.comp_id (y := G1.obj (F1.obj X))]
@@ -340,6 +338,7 @@ def Category.Equivalence.comp {C D E : Type*} [Category C] [Category D] [Categor
     . simp [NatTrans.comp, t1, Category.id, NatTrans.id, Category.comp]
       congr
       funext X
+      simp [t2]
       simp [Functor.id, Functor.comp]
       simp [← Functor.map_comp]
   ε' := by
@@ -364,11 +363,13 @@ def Category.Equivalence.comp {C D E : Type*} [Category C] [Category D] [Categor
     . simp [NatTrans.comp, t1, Category.id, NatTrans.id, Category.comp]
       congr
       funext X
+      simp [t2]
       simp [Functor.id, Functor.comp]
       simp [← Functor.map_comp]
     . simp [NatTrans.comp, t1, Category.id, NatTrans.id, Category.comp]
       congr
       funext X
+      simp [t2]
       simp [Functor.id]
       simp [Category.assoc]
       simp [← Functor.map_comp]

@@ -112,7 +112,7 @@ theorem NatTrans.isic_of_components_isic [Category C] [Category D] {F G : C ⥤ 
       naturality := by
         intro X Y f
         have := (h1 X).choose_spec
-        simp [t, this]
+        simp [t]
         have ⟨_, e⟩ := (h1 X).monic_and_epic
         apply e
         simp [this]
@@ -130,13 +130,13 @@ theorem NatTrans.isic_of_components_isic [Category C] [Category D] {F G : C ⥤ 
   . simp [Category.comp, NatTrans.comp, Category.id, NatTrans.id]
     congr
     funext x
-    simp [t]
+    simp [s, t]
     have := (h1 x).choose_spec
     simp [this]
   . simp [Category.comp, NatTrans.comp, Category.id, NatTrans.id]
     congr
     funext x
-    simp [t]
+    simp [s, t]
     have := (h1 x).choose_spec
     simp [this]
 

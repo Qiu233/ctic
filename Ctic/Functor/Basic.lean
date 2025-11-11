@@ -12,8 +12,13 @@ attribute [simp] Functor.map_id Functor.map_comp
 
 infixr:300 " ⥤ " => Functor
 
-instance [Category C] [Category D] : CoeFun (C ⥤ D) (fun _ => C → D) where
-  coe f := f.obj
+instance [Category C] [Category D] : CoeFun (C ⥤ D) (fun _ => C → D) := ⟨Functor.obj⟩
+
+open Lean in
+@[app_unexpander Functor.obj]
+private def unexpand_Functor_obj : PrettyPrinter.Unexpander
+  | `($(_) $f $a) => `($f $a)
+  | _ => throw ()
 
 def Functor.id (C : Type u) [Category C] : C ⥤ C where
   obj X := X

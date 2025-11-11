@@ -22,23 +22,19 @@ theorem Isomorphism.map_iso_inv [Category C] [Category D] {F G : C ⥤ D} {iso :
   simp [Isomorphism.map_iso]
 
 def Isomorphism.trans_essentially_surjective [Category C] [Category D] {F G : C ⥤ D} : F ≅ G → F.EssentiallySurjective → G.EssentiallySurjective := by
-  intro iso es
-  intro d
+  intro iso es d
   let ⟨c, hc⟩ := es d
   let t := iso.component c |>.symm
   use c
   apply t.comp hc
 
 def Isomorphism.trans_essentially_injective [Category C] [Category D] {F G : C ⥤ D} : F ≅ G → F.EssentiallyInjective → G.EssentiallyInjective := by
-  intro iso ei
-  intro X Y h
+  intro iso ei X Y h
   let f' := ((iso.component X).comp h).comp (iso.component Y).symm
   apply ei X Y f'
 
 theorem Isomorphism.trans_full [Category C] [Category D] {F G : C ⥤ D} : F ≅ G → F.Full → G.Full := by
-  intro iso full
-  intro X Y
-  intro g'
+  intro iso full X Y g'
   let f' := iso.morphism.component X ≫ g' ≫ iso.inverse.component Y
   have ⟨f, hf⟩ := full (X := X) (Y := Y) f'
   use f
@@ -48,9 +44,7 @@ theorem Isomorphism.trans_full [Category C] [Category D] {F G : C ⥤ D} : F ≅
   simp [← hf, iso.morphism.naturality, ← Category.assoc]
 
 theorem Isomorphism.trans_faithful [Category C] [Category D] {F G : C ⥤ D} : F ≅ G → F.Faithful → G.Faithful := by
-  intro iso faithful
-  intro X Y
-  intro f1 f2 h1
+  intro iso faithful X Y f1 f2 h1
   apply faithful
   apply iso.component_monic
   rw [← iso.morphism.naturality]
