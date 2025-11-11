@@ -58,7 +58,7 @@ lemma isic_of_terminal_in_category_of_elements
       simp [Category.id, Yoneda.Contravariant.iso, Yoneda.Contravariant.Embedding, Yoneda.Contravariant.t1, Category.comp]
     have h6 := p.commu
     change s.f = (Yoneda.Contravariant.Embedding (C := C)).map p.k ≫ α at h6
-    have h7 := terminal.unique (X := s) (f := ⟨f, (), h5.symm⟩)
+    have h7 := terminal.unique_morphism (X := s) (f := ⟨f, (), h5.symm⟩)
     have h8 : f = p.k := by
       rw [CommaHom.ext_iff] at h7
       simp at h7
@@ -80,7 +80,7 @@ lemma isic_of_terminal_in_category_of_elements
       simp [Category.id, Yoneda.Contravariant.iso, Yoneda.Contravariant.Embedding, Yoneda.Contravariant.t1, Category.comp]
     have h11 := q.commu
     change t.f = (Yoneda.Contravariant.Embedding (C := C)).map q.k ≫ α at h11
-    have h12 := terminal.unique (X := t) (f := ⟨g, (), h10.symm⟩)
+    have h12 := terminal.unique_morphism (X := t) (f := ⟨g, (), h10.symm⟩)
     have h13 : g = q.k := by
       rw [CommaHom.ext_iff] at h12
       simp at h12
@@ -118,7 +118,7 @@ def terminal_in_category_of_elements_of_isic.morphism {L : ∫ F} (isic : Invert
   rw [this.2]
   simp
 
-lemma terminal_in_category_of_elements_of_isic.unique {L : ∫ F} (isic : Invertible L.f) :
+lemma terminal_in_category_of_elements_of_isic.unique_morphism {L : ∫ F} (isic : Invertible L.f) :
     ∀ (X : ∫ F) (f : X ⟶ L), f = terminal_in_category_of_elements_of_isic.morphism isic X := by
   intro X f
   obtain ⟨k, h, commu⟩ := f
@@ -133,7 +133,7 @@ lemma terminal_in_category_of_elements_of_isic.unique {L : ∫ F} (isic : Invert
 
 lemma terminal_in_category_of_elements_of_isic {L : ∫ F} (isic : Invertible L.f) : Nonempty (Terminal L) :=
   Nonempty.intro ⟨terminal_in_category_of_elements_of_isic.morphism isic,
-    fun {X f} => terminal_in_category_of_elements_of_isic.unique isic X f⟩
+    fun {X f} => terminal_in_category_of_elements_of_isic.unique_morphism isic X f⟩
 
 theorem isic_iff_terminal_in_category_of_elements
     [decEq : ∀ X, DecidableEq (F X)] (L : ∫ F) : Nonempty (Terminal L) ↔ Invertible L.f :=
@@ -161,7 +161,7 @@ def Representation.cong
     use t
     use terminal_in_category_of_elements_of_isic.morphism r.iso.invertible
     intro X f
-    have := terminal_in_category_of_elements_of_isic.unique (F := F) ((show t.f = r.iso.morphism by rfl) ▸ r.iso.invertible)
+    have := terminal_in_category_of_elements_of_isic.unique_morphism (F := F) ((show t.f = r.iso.morphism by rfl) ▸ r.iso.invertible)
     apply this
   let g : (L : ∫ F) ×' Terminal L → Representation F := by
     intro ⟨L, terminal⟩
@@ -187,7 +187,7 @@ def Representation.cong
       unfold terminal_in_category_of_elements_of_isic.morphism
       funext X
       simp
-      apply terminal.unique (X := X)
+      apply terminal.unique_morphism (X := X)
 
 @[simp]
 theorem Representation.cong_map
@@ -254,7 +254,7 @@ private def rep2terminal [Category C] [Category D] {d : D} (F : C ⥤ D) : Repre
         rw [α.backward_iso]
         rfl
       ⟩
-    have eq := terminal.unique (f := s)
+    have eq := terminal.unique_morphism (f := s)
     have := terminal.morphism X' |>.commu
     simp [Yoneda.Contravariant.iso, Yoneda.Contravariant.t2, Yoneda.Contravariant.Embedding] at this
     change X'.f = Yoneda.Contravariant.Embedding.map (terminal.morphism X').k ≫ elem.f at this
@@ -316,7 +316,7 @@ private def terminal2rep [Category C] [Category D] {d : D} (F : C ⥤ D) : (Σ' 
       rw [← this]
       rfl
       ⟩
-    have := terminal.unique (f := s)
+    have := terminal.unique_morphism (f := s)
     rw [← this]
   use m, n
   . rw [NatTrans.ext_iff]
@@ -328,7 +328,7 @@ private def terminal2rep [Category C] [Category D] {d : D} (F : C ⥤ D) : (Σ' 
     let p : Comma F (TrivialFunctor d) := ⟨x, (), F.map t ≫ c.f⟩
     change (terminal.morphism p).k = t
     let s : CommaHom p c := ⟨t, (), by simp [p]⟩
-    have := terminal.unique (f := s)
+    have := terminal.unique_morphism (f := s)
     rw [← this]
   . rw [NatTrans.ext_iff]
     funext ⟨x⟩

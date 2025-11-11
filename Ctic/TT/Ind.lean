@@ -75,7 +75,7 @@ def Algebra.iso_of_initial {F : C ⥤ C} {X : Algebra F} (h : Initial X) : (Alge
     have := t.prop
     simp [Algebra.lift] at this
     let s : Algebra.Hom X X := ⟨t.morphism ≫ X.α, by rw [Functor.map_comp, ← this, Category.assoc]⟩
-    have h1 := h.unique (f := s)
+    have h1 := h.unique_morphism (f := s)
     have h2 := h.self
     have h3 := Eq.trans h1 h2
     rw [Algebra.Hom.ext_iff] at h3
@@ -90,7 +90,7 @@ def Algebra.iso_of_initial {F : C ⥤ C} {X : Algebra F} (h : Initial X) : (Alge
     have := t.prop
     simp [Algebra.lift] at this
     let s : Algebra.Hom X X := ⟨t.morphism ≫ X.α, by rw [Functor.map_comp, ← this, Category.assoc]⟩
-    have h1 := h.unique (f := s)
+    have h1 := h.unique_morphism (f := s)
     have h2 := h.self
     have h3 := Eq.trans h1 h2
     rw [Algebra.Hom.ext_iff] at h3
@@ -136,7 +136,7 @@ def Nat.Alg.Initial : Initial Nat.Alg where
     cases n with
     | inl u => cases u; rfl
     | inr n => exact n.rec (by rfl) (λ _ _ => by rfl)
-  unique {Y} := by
+  unique_morphism {Y} := by
     intro ⟨f, hf⟩
     congr 1
     simp [Nat.Alg, Nat.functor, Category.comp] at hf

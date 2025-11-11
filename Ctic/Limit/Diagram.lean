@@ -11,9 +11,10 @@ instance : Category (Discrete α) where
   comp f g := ⟨Eq.trans f.down g.down⟩
   assoc := by simp
 
-scoped notation:max "𝟐" => Discrete (Fin 2)
-
 namespace Diagram
+
+scoped notation:max "𝟬" => Discrete (Fin 0)
+scoped notation:max "𝟐" => Discrete (Fin 2)
 
 @[simp]
 private abbrev Binary.Discrete.obj [Category C] (X Y : C) : 𝟐 → C
@@ -38,3 +39,7 @@ def Binary.Discrete.{v, u} [inst : Category.{v, u} C] (X Y : C) : 𝟐 ⥤ C whe
     | 0 => rfl
     | 1 => rfl
   map_comp {A B C} f g := by cases f.down; cases g.down; match A with | 0 | 1 => simp
+
+theorem Nullary.empty (x : 𝟬) : False := by
+  have ⟨x, h⟩ := x
+  apply Nat.not_lt_zero _ h

@@ -22,18 +22,18 @@ instance {J : Type u} {C : Type v} [Category J] [Category C] (F : J ⥤ C) : Cat
 
 class Initial {C : Type u} [Category C] (X : C) where
   morphism : (Y : C) → X ⟶ Y
-  unique : ∀ {Y : C} (f : X ⟶ Y), f = morphism Y
+  unique_morphism : ∀ {Y : C} (f : X ⟶ Y), f = morphism Y
 
 class Terminal {C : Type u} [Category C] (Y : C) where
   morphism : (X : C) → X ⟶ Y
-  unique : ∀ {X : C} (f : X ⟶ Y), f = morphism X
+  unique_morphism : ∀ {X : C} (f : X ⟶ Y), f = morphism X
 
 theorem Initial.self [Category C] {X : C} {i : Initial X} : i.morphism X = 𝟙 X := by
-  have := i.unique (f := 𝟙 X)
+  have := i.unique_morphism (f := 𝟙 X)
   simp [this]
 
 theorem Terminal.self [Category C] {X : C} {t : Terminal X} : t.morphism X = 𝟙 X := by
-  have := t.unique (f := 𝟙 X)
+  have := t.unique_morphism (f := 𝟙 X)
   simp [this]
 
 structure Limit {J C : Type*} [Category J] [Category C] (F : J ⥤ C) where
@@ -160,6 +160,26 @@ instance : Category CategoryObj where
     . conv => lhs; rw [← Functor.assoc]; rhs; rw [Functor.assoc]; lhs; rw [f.ε']
       simp [g.ε']
   assoc {W X Y Z} f g h := by aesop
+
+def Terminal.unique {C : Type*} [Category C] {X Y : C} : Terminal X → Terminal Y → X ≅ Y := by
+  intro t1 t2
+  refine ⟨t2.morphism X, t1.morphism Y, ?_, ?_⟩
+  . have : 𝟙 X = t1.morphism X := t1.unique_morphism _
+    rw [this]
+    apply t1.unique_morphism
+  . have : 𝟙 Y = t2.morphism Y := t2.unique_morphism _
+    rw [this]
+    apply t2.unique_morphism
+
+def Initial.unique {C : Type*} [Category C] {X Y : C} : Initial X → Initial Y → X ≅ Y := by
+  intro t1 t2
+  refine ⟨t1.morphism Y, t2.morphism X, ?_, ?_⟩
+  . have : 𝟙 X = t1.morphism X := t1.unique_morphism _
+    rw [this]
+    apply t1.unique_morphism
+  . have : 𝟙 Y = t2.morphism Y := t2.unique_morphism _
+    rw [this]
+    apply t2.unique_morphism
 
 -- def Cone.down [Category C] [Category D] (F : C ⥤ D) : (Cone F) ≅ (Comma Δ (TrivialFunctor F)) where
 --   morphism := aux_1 F
