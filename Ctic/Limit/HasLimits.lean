@@ -328,3 +328,4 @@ example (C : Type u) [SmallCategory.{u} C] [has_finite_limits : HasFiniteLimitsO
         change f'.u.val = _
         congr
     use L'
+  sorry
